@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "Route Spoofer — a standalone Android app that injects a scripted, moving mock GPS fix into the whole device along a tapped route.",
+  "author": "Maxim Popelnitskiy",
   "license": "MIT",
   "scripts": {
     "sync": "cap sync",

@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+  Route Spoofer v1.0 — fake GPS route player
+  by Maxim Popelnitskiy
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -154,6 +158,13 @@
   .logline:first-child{color:var(--ok)}
   .logline .t{color:var(--signal)}
 
+  /* about / author credit */
+  .credit{
+    text-align:center; font:500 10px/1.4 var(--sans); letter-spacing:.04em;
+    color:var(--muted); opacity:.7; padding-top:2px;
+  }
+  .credit b{font-weight:600; color:var(--muted)}
+
   /* waypoint marker glyph */
   .wp{
     width:24px;height:24px;border-radius:50% 50% 50% 2px; transform:rotate(45deg);
@@ -305,6 +316,8 @@
         <div class="logline">waiting for playback…</div>
       </div>
     </details>
+
+    <div class="credit">Route Spoofer <span id="appVersion">v1.0</span> · by <b>Maxim Popelnitskiy</b></div>
   </div>
 
   <!-- readiness / setup overlay (native only) -->
