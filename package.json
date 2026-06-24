@@ -1,0 +1,21 @@
+{
+  "name": "route-spoofer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Route Spoofer — a standalone Android app that injects a scripted, moving mock GPS fix into the whole device along a tapped route.",
+  "license": "MIT",
+  "scripts": {
+    "sync": "cap sync",
+    "sync:android": "cap sync android",
+    "open:android": "cap open android",
+    "build:android": "cap sync android && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/geolocation": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}
