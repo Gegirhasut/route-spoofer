@@ -1,0 +1,20 @@
+# Detekt configuration for :app — layered on top of detekt's built-in defaults
+# (the Gradle plugin sets buildUponDefaultConfig = true). Pre-existing findings
+# are grandfathered via config/detekt/baseline.xml; any NEW finding fails the
+# build. A couple of thresholds are widened to suit this small Android app.
+build:
+  maxIssues: 0
+
+complexity:
+  TooManyFunctions:
+    # The service and the Capacitor plugin are thin dispatchers with many small
+    # handler methods; 11 is too low for that shape.
+    thresholdInClasses: 25
+    thresholdInFiles: 25
+
+style:
+  ReturnCount:
+    # Guard-clause early returns read more clearly than forced single-exit.
+    max: 4
+  MaxLineLength:
+    maxLineLength: 140

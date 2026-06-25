@@ -1,0 +1,19 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{kt,kts}]
+ktlint_code_style = ktlint_official
+# Generated/build outputs and tests follow the same rules. Long arithmetic
+# expressions in the geometry are clearer unwrapped, so line length is not
+# enforced; everything else uses ktlint's official style.
+ktlint_standard_max-line-length = disabled
+
+[*.{yml,yaml,json}]
+indent_size = 2
