@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Route Spoofer — Android mock-GPS route player</title>
-    <meta name="description" content="Route Spoofer is a standalone Android app that plays a scripted, moving GPS location across the whole device so you can test location-based apps without physically moving.">
+    <meta name="description" content="Route Spoofer is a standalone Android app that feeds a scripted, moving GPS location to your whole device. Broadcasting is separate from movement: a GPS toggle turns the fake location on or off, while GO / Pause drives it along a route you draw. Every other app on the phone reads the simulated position as if you were really there — no root and no desktop tool, it all runs on the phone.">
     <meta name="theme-color" content="#0d1320">
     <meta property="og:title" content="Route Spoofer — Android mock-GPS route player">
-    <meta property="og:description" content="Route Spoofer is a standalone Android app that plays a scripted, moving GPS location across the whole device so you can test location-based apps without physically moving.">
+    <meta property="og:description" content="Route Spoofer is a standalone Android app that feeds a scripted, moving GPS location to your whole device. Broadcasting is separate from movement: a GPS toggle turns the fake location on or off, while GO / Pause drives it along a route you draw. Every other app on the phone reads the simulated position as if you were really there — no root and no desktop tool, it all runs on the phone.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="images/hero.jpg">
     <meta name="twitter:card" content="summary_large_image">
@@ -83,7 +83,7 @@
             <div class="hero-copy">
                 <span class="pill" data-i18n="hero.badge">Android · Mock GPS · MIT</span>
                 <h1 class="hero-title">Route Spoofer</h1>
-                <p class="hero-tagline" data-i18n="hero.tagline">Android mock-GPS route player — drive a scripted route at a set speed to test location-based apps.</p>
+                <p class="hero-tagline" data-i18n="hero.tagline">Android mock-GPS tool — broadcast a scripted, moving location to your whole device so any app reads the route as real.</p>
                 <div class="cta-row">
                     <a class="btn btn-primary" href="https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk" rel="noopener" data-i18n="hero.download">Download APK</a>
                     <a class="btn btn-primary" href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank" data-i18n="hero.cta">View on GitHub</a>
@@ -102,7 +102,7 @@
     <section class="section" id="what">
         <div class="container narrow">
             <h2 class="section-title" data-i18n="what.heading">What it is</h2>
-            <p class="lead" data-i18n="what.body">Route Spoofer is a standalone Android app that injects a scripted, moving GPS location into your whole device. You draw a route, set a speed and press Play — and every other app on the phone reads the simulated position as if you were really there. No root, no separate desktop tool: it runs entirely on the phone.</p>
+            <p class="lead" data-i18n="what.body">Route Spoofer is a standalone Android app that feeds a scripted, moving GPS location to your whole device. Broadcasting is separate from movement: a GPS toggle turns the fake location on or off, while GO / Pause drives it along a route you draw. Every other app on the phone reads the simulated position as if you were really there — no root and no desktop tool, it all runs on the phone.</p>
         </div>
     </section>
 
@@ -176,50 +176,50 @@
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.0.title">Multi-point routes</h3>
-                                <p data-i18n="features.items.0.text">Tap A → B → C … to draw a route; Route Spoofer interpolates a smooth path between the points.</p>
+                                <h3 data-i18n="features.items.0.title">GPS and movement, separate</h3>
+                                <p data-i18n="features.items.0.text">A GPS toggle turns location broadcasting on or off; GO / Pause drives along the route. With GPS on and a single point, the driver just stands there and broadcasts.</p>
                             </div>
                         </div>
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.1.title">Speed &amp; interval</h3>
-                                <p data-i18n="features.items.1.text">Set the playback speed in km/h and how often a location fix is emitted.</p>
+                                <h3 data-i18n="features.items.1.title">Stops, waits and GO</h3>
+                                <p data-i18n="features.items.1.text">Give any point a wait — N minutes (auto-resume) or until you press GO. GO ends any wait early, so you stay in control of the trip.</p>
                             </div>
                         </div>
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.2.title">Play · Pause · Stop</h3>
-                                <p data-i18n="features.items.2.text">Start, pause and stop the run at any moment.</p>
+                                <h3 data-i18n="features.items.2.title">Build and edit live</h3>
+                                <p data-i18n="features.items.2.text">Tap the map to drop points (A, B, C…), drag to move them, and append new ones even while driving. Every point stays editable at any time — nothing is locked.</p>
                             </div>
                         </div>
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.3.title">Loop modes</h3>
-                                <p data-i18n="features.items.3.text">Choose loop off, restart from the start, or ping-pong back and forth along the route.</p>
+                                <h3 data-i18n="features.items.3.title">Live and per-leg speed</h3>
+                                <p data-i18n="features.items.3.text">Drag the speed slider any time, even mid-drive, and set per-leg overrides. At the end the driver holds and keeps broadcasting; loop off, restart or ping-pong.</p>
                             </div>
                         </div>
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.4.title">Live telemetry</h3>
-                                <p data-i18n="features.items.4.text">A HUD shows speed, heading, progress and distance, with a running log of emitted fixes.</p>
+                                <h3 data-i18n="features.items.4.title">Saved routes</h3>
+                                <p data-i18n="features.items.4.text">Save the whole scene as a named route, then load, rename or delete it — all on-device. Select several to export one JSON file or share it from Android; import merges them back.</p>
                             </div>
                         </div>
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.5.title">Saved locally</h3>
-                                <p data-i18n="features.items.5.text">Your route is stored on the device — reopen the app and replay it.</p>
+                                <h3 data-i18n="features.items.5.title">Jump anywhere, remembered</h3>
+                                <p data-i18n="features.items.5.text">Search any place or address to recenter the map across the globe, and it remembers your last view between launches.</p>
                             </div>
                         </div>
                                             <div class="feature">
                             <span class="feature-dot" aria-hidden="true"></span>
                             <div>
-                                <h3 data-i18n="features.items.6.title">Foreground service</h3>
-                                <p data-i18n="features.items.6.text">A native foreground service keeps emitting the location even while the app is in the background.</p>
+                                <h3 data-i18n="features.items.6.title">Help and 8 languages</h3>
+                                <p data-i18n="features.items.6.text">A built-in “?” legend explains every control. The dark instrument-panel UI sits on a light, readable map and ships in 8 languages with auto-detect.</p>
                             </div>
                         </div>
                                     </div>
@@ -262,7 +262,7 @@
     <section class="section section-alt" id="how">
         <div class="container narrow">
             <h2 class="section-title" data-i18n="how.heading">How it works</h2>
-            <p class="lead" data-i18n="how.body">A Capacitor 7 web UI built with HTML and JavaScript handles route drawing and preview. A native Kotlin foreground service injects the position into Android&#039;s GPS and NETWORK test providers, so the fix reaches the whole system. Route Spoofer must be selected as the system mock-location app. The project is built with the JDK 21 toolchain.</p>
+            <p class="lead" data-i18n="how.body">A Capacitor web UI (HTML/JavaScript) handles the map, route editing and a live preview. A native Kotlin foreground service owns the playback clock and injects the position into Android's GPS and NETWORK test providers, so the fix reaches the whole system and keeps emitting in the background. The movement and hold/wake logic live in a pure, unit-tested engine; saved routes and the last map view are stored on the device, and place search uses OpenStreetMap. Route Spoofer must be selected as the system mock-location app; the project builds on the JDK 21 toolchain.</p>
             <ul class="chips">
                                     <li data-i18n="how.chips.0">Capacitor 7 web UI</li>
                                     <li data-i18n="how.chips.1">Kotlin foreground service</li>
@@ -276,7 +276,7 @@
     <section class="section" id="setup">
         <div class="container">
             <h2 class="section-title" data-i18n="setup.heading">How to use</h2>
-            <p class="lead center" data-i18n="setup.intro">A one-time phone setup, then press Play. The two screenshots below show the developer-mode steps.</p>
+            <p class="lead center" data-i18n="setup.intro">A one-time phone setup, then turn GPS on and press GO. The two screenshots below show the developer-mode steps.</p>
 
             <div class="setup-grid">
                 <div class="steps">
@@ -307,7 +307,7 @@
                                 <span class="step-n">4</span>
                                 <div>
                                     <h4 data-i18n="setup.steps.3.title">Launch &amp; grant</h4>
-                                    <p data-i18n="setup.steps.3.text">Open Route Spoofer, grant Location and Notifications, wait for the readiness card, then press Play.</p>
+                                    <p data-i18n="setup.steps.3.text">Open Route Spoofer, grant Location and Notifications, wait for the readiness card, then turn GPS on and press GO.</p>
                                 </div>
                             </li>
                                             </ol>
@@ -315,12 +315,12 @@
                 <div class="setup-shots">
                     <figure>
                         <img src="images/setup-buildnumber.jpg"
-                             alt="Software information screen — tap Build number to enable Developer options" data-i18n-alt="setup.shot_a_alt"
+                             alt="Android Developer options with Route Spoofer set as the mock location app" data-i18n-alt="setup.shot_a_alt"
                              width="480" height="1173" loading="lazy">
                     </figure>
                     <figure>
                         <img src="images/setup-mockcard.jpg"
-                             alt="In-app readiness card asking to select Route Spoofer as the mock-location app" data-i18n-alt="setup.shot_b_alt"
+                             alt="Selecting Route Spoofer in the “Select mock location app” list" data-i18n-alt="setup.shot_b_alt"
                              width="480" height="1173" loading="lazy">
                     </figure>
                 </div>
@@ -330,7 +330,7 @@
             <div class="cards cards-2">
                                     <article class="card">
                         <h3 data-i18n="setup.builds.0.title">Cloud build</h3>
-                        <p data-i18n="setup.builds.0.text">GitHub Actions builds the app — download the app-debug.apk artifact from the workflow run.</p>
+                        <p data-i18n="setup.builds.0.text">GitHub Actions builds the app on every push and publishes a rolling “latest” release — download the ready APK straight from there.</p>
                     </article>
                                     <article class="card">
                         <h3 data-i18n="setup.builds.1.title">Local build</h3>
