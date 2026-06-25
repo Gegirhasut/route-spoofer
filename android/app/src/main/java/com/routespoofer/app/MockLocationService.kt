@@ -228,15 +228,22 @@ class MockLocationService : Service() {
 
     private fun startInForeground() {
         val notif = buildNotification(R.string.notif_driving)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ServiceCompat.startForeground(
-                this,
-                NOTIF_ID,
-                notif,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
-            )
-        } else {
-            startForeground(NOTIF_ID, notif)
+        val sdk = Build.VERSION.SDK_INT
+        when {
+            // API 34+ enforces that the type passed here is declared in the
+            // manifest; the service is registered as "specialUse".
+            sdk >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
+                ServiceCompat.startForeground(
+                    this,
+                    NOTIF_ID,
+                    notif,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
+                )
+            // API 29–33 do not know the "specialUse" type, so start with no
+            // enforced type (passing a type the manifest doesn't list throws).
+            sdk >= Build.VERSION_CODES.Q ->
+                ServiceCompat.startForeground(this, NOTIF_ID, notif, 0)
+            else -> startForeground(NOTIF_ID, notif)
         }
     }
 

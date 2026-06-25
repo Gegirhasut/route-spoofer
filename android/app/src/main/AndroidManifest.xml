@@ -35,11 +35,19 @@
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
 
-        <!-- Foreground service that owns the playback clock + mock injection -->
+        <!-- Foreground service that owns the playback clock + mock injection.
+             It does NOT consume the device's location (it never reads a real
+             GPS fix); it INJECTS scripted fixes into the OS test providers, so
+             the standard "location" FGS type does not apply. "specialUse" is the
+             correct type, justified by the property below. -->
         <service
             android:name=".MockLocationService"
             android:exported="false"
-            android:foregroundServiceType="location" />
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Replays a user-defined route by injecting a scripted, moving mock GPS location into the Android test location providers at a set speed, so location-based apps can be tested without physically moving. The foreground service keeps emitting the route while the app is backgrounded." />
+        </service>
     </application>
 
     <!-- Permissions -->
@@ -48,7 +56,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Required for the app to appear in Developer options' "Select mock
          location app" picker. Not granted at runtime; selecting the app in

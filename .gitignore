@@ -12,6 +12,14 @@ android/app/release/
 *.apk
 *.aab
 
+# Signing material — never commit keystores or their passwords
+*.jks
+*.keystore
+*.p12
+release.jks
+upload.jks
+keystore.properties
+
 # Logs / OS
 *.log
 npm-debug.log*
