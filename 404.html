@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Route Spoofer — Android mock-GPS route player</title>
+    <meta name="description" content="Route Spoofer is a standalone Android app that plays a scripted, moving GPS location across the whole device so you can test location-based apps without physically moving.">
+    <meta name="theme-color" content="#0d1320">
+    <meta property="og:title" content="Route Spoofer — Android mock-GPS route player">
+    <meta property="og:description" content="Route Spoofer is a standalone Android app that plays a scripted, moving GPS location across the whole device so you can test location-based apps without physically moving.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="images/hero.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    
+    <script>
+        (function () {
+            try {
+                var l = localStorage.getItem('route-spoofer.lang');
+                if (l) document.documentElement.lang = l;
+            } catch (e) {}
+        })();
+    </script>
+
+    
+    <link rel="stylesheet" href="css/app.css">
+    <script src="js/i18n.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="#top" aria-label="Route Spoofer">
+            <img class="brand-logo" src="logo.png" alt="Route Spoofer logo" width="36" height="36">
+            <span class="brand-name">Route Spoofer</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Sections">
+            <a href="#features" data-i18n="nav.features">Features</a>
+            <a href="#maps" data-i18n="nav.maps">Map apps</a>
+            <a href="#how" data-i18n="nav.how">How it works</a>
+            <a href="#setup" data-i18n="nav.setup">How to use</a>
+        </nav>
+
+        <div class="lang" id="lang">
+            <button type="button" class="lang-trigger" id="langTrigger"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-label="Language" data-i18n-aria="lang_label">
+                <svg class="lang-globe" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"
+                     fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M3 12h18"/>
+                    <path d="M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z"/>
+                </svg>
+                <span class="lang-current" id="langCurrent">English</span>
+                <svg class="lang-caret" viewBox="0 0 12 8" width="11" height="8" aria-hidden="true">
+                    <path fill="currentColor" d="M1 1.2 6 6l5-4.8"/>
+                </svg>
+            </button>
+            <ul class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="en">English</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="ru">Русский</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="de">Deutsch</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="es">Español</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="pt">Português</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="fr">Français</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="zh">中文</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="hi">हिन्दी</li>
+                            </ul>
+        </div>
+    </div>
+</header>
+
+<main id="top">
+
+    
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-copy">
+                <span class="pill" data-i18n="hero.badge">Android · Mock GPS · MIT</span>
+                <h1 class="hero-title">Route Spoofer</h1>
+                <p class="hero-tagline" data-i18n="hero.tagline">Android mock-GPS route player — drive a scripted route at a set speed to test location-based apps.</p>
+                <div class="cta-row">
+                    <a class="btn btn-primary" href="https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk" rel="noopener" data-i18n="hero.download">Download APK</a>
+                    <a class="btn btn-primary" href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank" data-i18n="hero.cta">View on GitHub</a>
+                    <a class="btn btn-ghost" href="#setup" data-i18n="hero.cta2">How to use</a>
+                </div>
+            </div>
+            <div class="hero-shot">
+                <img class="phone" src="images/hero.jpg"
+                     alt="Route Spoofer main screen with a multi-point route on the map" data-i18n-alt="hero.shot_alt"
+                     width="480" height="1173" loading="eager">
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="section" id="what">
+        <div class="container narrow">
+            <h2 class="section-title" data-i18n="what.heading">What it is</h2>
+            <p class="lead" data-i18n="what.body">Route Spoofer is a standalone Android app that injects a scripted, moving GPS location into your whole device. You draw a route, set a speed and press Play — and every other app on the phone reads the simulated position as if you were really there. No root, no separate desktop tool: it runs entirely on the phone.</p>
+        </div>
+    </section>
+
+    
+    <section class="section section-alt" id="who">
+        <div class="container">
+            <h2 class="section-title" data-i18n="who.heading">Who it&#039;s for</h2>
+            <p class="lead center" data-i18n="who.intro">Built for QA engineers and developers who work on location-based apps — driver, navigation, delivery and dispatch products.</p>
+            <div class="cards cards-3">
+                                    <article class="card">
+                        <h3 data-i18n="who.items.0.title">Test without moving</h3>
+                        <p data-i18n="who.items.0.text">Exercise a driver, navigation, delivery or dispatch app from your desk instead of walking or driving a real route.</p>
+                    </article>
+                                    <article class="card">
+                        <h3 data-i18n="who.items.1.title">Reproducible playback</h3>
+                        <p data-i18n="who.items.1.text">Replay the exact same route at the exact same speed on every run — ideal for regression tests and bug reproduction.</p>
+                    </article>
+                                    <article class="card">
+                        <h3 data-i18n="who.items.2.title">Believable demos</h3>
+                        <p data-i18n="who.items.2.text">Show a ride-hailing or dispatch platform with a realistic moving trip, without sending anyone outside.</p>
+                    </article>
+                            </div>
+        </div>
+    </section>
+
+    
+    <section class="section" id="maps">
+        <div class="container">
+            <h2 class="section-title" data-i18n="maps.heading">Works with any map app</h2>
+            <p class="lead center" data-i18n="maps.body">Because the location is injected at the system level, the fake position appears everywhere — not just inside Route Spoofer. Open Google Maps, Yandex Maps, Maps.me or any navigator and watch the marker follow your scripted route.</p>
+            <div class="map-grid">
+                                                    <figure class="map-tile">
+                        <img src="images/gmaps.jpg"
+                             alt="Spoofed location shown in Google Maps" data-i18n-alt="maps.tiles.0.alt"
+                             width="480" height="1173" loading="lazy">
+                        <figcaption data-i18n="maps.tiles.0.label">Google Maps</figcaption>
+                    </figure>
+                                    <figure class="map-tile">
+                        <img src="images/yandex-maps.jpg"
+                             alt="Spoofed location shown in Yandex Maps" data-i18n-alt="maps.tiles.1.alt"
+                             width="480" height="1173" loading="lazy">
+                        <figcaption data-i18n="maps.tiles.1.label">Yandex Maps</figcaption>
+                    </figure>
+                                    <figure class="map-tile">
+                        <img src="images/mapsme.jpg"
+                             alt="Spoofed location shown in Maps.me" data-i18n-alt="maps.tiles.2.alt"
+                             width="480" height="1173" loading="lazy">
+                        <figcaption data-i18n="maps.tiles.2.label">Maps.me</figcaption>
+                    </figure>
+                                    <figure class="map-tile">
+                        <img src="images/2gis.jpg"
+                             alt="Spoofed location shown in 2GIS" data-i18n-alt="maps.tiles.3.alt"
+                             width="480" height="1173" loading="lazy">
+                        <figcaption data-i18n="maps.tiles.3.label">2GIS</figcaption>
+                    </figure>
+                            </div>
+            <p class="note center">
+                <img class="inline-banner" src="images/mock-banner.jpg"
+                     alt="Android “Mock location is on” system banner" data-i18n-alt="maps.banner_alt"
+                     width="480" height="110" loading="lazy">
+            </p>
+        </div>
+    </section>
+
+    
+    <section class="section section-alt" id="features">
+        <div class="container">
+            <h2 class="section-title" data-i18n="features.heading">Features</h2>
+            <div class="feature-layout">
+                <div class="feature-list">
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.0.title">Multi-point routes</h3>
+                                <p data-i18n="features.items.0.text">Tap A → B → C … to draw a route; Route Spoofer interpolates a smooth path between the points.</p>
+                            </div>
+                        </div>
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.1.title">Speed &amp; interval</h3>
+                                <p data-i18n="features.items.1.text">Set the playback speed in km/h and how often a location fix is emitted.</p>
+                            </div>
+                        </div>
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.2.title">Play · Pause · Stop</h3>
+                                <p data-i18n="features.items.2.text">Start, pause and stop the run at any moment.</p>
+                            </div>
+                        </div>
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.3.title">Loop modes</h3>
+                                <p data-i18n="features.items.3.text">Choose loop off, restart from the start, or ping-pong back and forth along the route.</p>
+                            </div>
+                        </div>
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.4.title">Live telemetry</h3>
+                                <p data-i18n="features.items.4.text">A HUD shows speed, heading, progress and distance, with a running log of emitted fixes.</p>
+                            </div>
+                        </div>
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.5.title">Saved locally</h3>
+                                <p data-i18n="features.items.5.text">Your route is stored on the device — reopen the app and replay it.</p>
+                            </div>
+                        </div>
+                                            <div class="feature">
+                            <span class="feature-dot" aria-hidden="true"></span>
+                            <div>
+                                <h3 data-i18n="features.items.6.title">Foreground service</h3>
+                                <p data-i18n="features.items.6.text">A native foreground service keeps emitting the location even while the app is in the background.</p>
+                            </div>
+                        </div>
+                                    </div>
+                <div class="feature-shot">
+                    <img class="phone" src="images/app-emitting.jpg"
+                         alt="Route Spoofer interface in Chinese" data-i18n-alt="multilingual.alt_a"
+                         width="480" height="1173" loading="lazy">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="section" id="multilingual">
+        <div class="container">
+            <h2 class="section-title" data-i18n="multilingual.heading">Multilingual interface</h2>
+            <p class="lead center" data-i18n="multilingual.body">The app interface itself is translated into several languages and switches on the fly — handy when you test the same flow across locales.</p>
+            <ul class="chips lang-chips" aria-label="Supported languages">
+                                    <li lang="en">English</li>
+                                    <li lang="ru">Русский</li>
+                                    <li lang="de">Deutsch</li>
+                                    <li lang="es">Español</li>
+                                    <li lang="pt">Português</li>
+                                    <li lang="fr">Français</li>
+                                    <li lang="zh">中文</li>
+                                    <li lang="hi">हिन्दी</li>
+                            </ul>
+            <div class="shot-pair">
+                <img class="phone" src="images/lang-zh.jpg"
+                     alt="Route Spoofer interface in Chinese" data-i18n-alt="multilingual.alt_a"
+                     width="480" height="1173" loading="lazy">
+                <img class="phone" src="images/lang-es.jpg"
+                     alt="Route Spoofer interface in Spanish" data-i18n-alt="multilingual.alt_b"
+                     width="480" height="1173" loading="lazy">
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="section section-alt" id="how">
+        <div class="container narrow">
+            <h2 class="section-title" data-i18n="how.heading">How it works</h2>
+            <p class="lead" data-i18n="how.body">A Capacitor 7 web UI built with HTML and JavaScript handles route drawing and preview. A native Kotlin foreground service injects the position into Android&#039;s GPS and NETWORK test providers, so the fix reaches the whole system. Route Spoofer must be selected as the system mock-location app. The project is built with the JDK 21 toolchain.</p>
+            <ul class="chips">
+                                    <li data-i18n="how.chips.0">Capacitor 7 web UI</li>
+                                    <li data-i18n="how.chips.1">Kotlin foreground service</li>
+                                    <li data-i18n="how.chips.2">GPS + NETWORK mock providers</li>
+                                    <li data-i18n="how.chips.3">JDK 21</li>
+                            </ul>
+        </div>
+    </section>
+
+    
+    <section class="section" id="setup">
+        <div class="container">
+            <h2 class="section-title" data-i18n="setup.heading">How to use</h2>
+            <p class="lead center" data-i18n="setup.intro">A one-time phone setup, then press Play. The two screenshots below show the developer-mode steps.</p>
+
+            <div class="setup-grid">
+                <div class="steps">
+                    <h3 class="sub" data-i18n="setup.steps_title">Phone setup</h3>
+                    <ol class="step-list">
+                                                    <li>
+                                <span class="step-n">1</span>
+                                <div>
+                                    <h4 data-i18n="setup.steps.0.title">Enable Developer options</h4>
+                                    <p data-i18n="setup.steps.0.text">Open Settings → About phone → Software information and tap Build number seven times to unlock Developer options.</p>
+                                </div>
+                            </li>
+                                                    <li>
+                                <span class="step-n">2</span>
+                                <div>
+                                    <h4 data-i18n="setup.steps.1.title">Install the app</h4>
+                                    <p data-i18n="setup.steps.1.text">Allow installs from unknown sources and sideload the app-debug.apk file onto the phone.</p>
+                                </div>
+                            </li>
+                                                    <li>
+                                <span class="step-n">3</span>
+                                <div>
+                                    <h4 data-i18n="setup.steps.2.title">Select mock-location app</h4>
+                                    <p data-i18n="setup.steps.2.text">In Developer options open “Select mock location app” and choose Route Spoofer.</p>
+                                </div>
+                            </li>
+                                                    <li>
+                                <span class="step-n">4</span>
+                                <div>
+                                    <h4 data-i18n="setup.steps.3.title">Launch &amp; grant</h4>
+                                    <p data-i18n="setup.steps.3.text">Open Route Spoofer, grant Location and Notifications, wait for the readiness card, then press Play.</p>
+                                </div>
+                            </li>
+                                            </ol>
+                </div>
+                <div class="setup-shots">
+                    <figure>
+                        <img src="images/setup-buildnumber.jpg"
+                             alt="Software information screen — tap Build number to enable Developer options" data-i18n-alt="setup.shot_a_alt"
+                             width="480" height="1173" loading="lazy">
+                    </figure>
+                    <figure>
+                        <img src="images/setup-mockcard.jpg"
+                             alt="In-app readiness card asking to select Route Spoofer as the mock-location app" data-i18n-alt="setup.shot_b_alt"
+                             width="480" height="1173" loading="lazy">
+                    </figure>
+                </div>
+            </div>
+
+            <h3 class="sub center" data-i18n="setup.build_title">Get the APK</h3>
+            <div class="cards cards-2">
+                                    <article class="card">
+                        <h3 data-i18n="setup.builds.0.title">Cloud build</h3>
+                        <p data-i18n="setup.builds.0.text">GitHub Actions builds the app — download the app-debug.apk artifact from the workflow run.</p>
+                    </article>
+                                    <article class="card">
+                        <h3 data-i18n="setup.builds.1.title">Local build</h3>
+                        <p data-i18n="setup.builds.1.text">Or build it yourself in Android Studio with JDK 21 and the Android SDK.</p>
+                    </article>
+                            </div>
+        </div>
+    </section>
+
+    
+    <section class="section section-alt" id="platform">
+        <div class="container narrow">
+            <h2 class="section-title" data-i18n="platform.heading">Platform support</h2>
+            <p class="lead" data-i18n="platform.body">Android only. iOS has no public mock-location API, so it cannot be supported.</p>
+            <div class="platform-row">
+                <span class="tag tag-ok" data-i18n="platform.android">Android — supported</span>
+                <span class="tag tag-no" data-i18n="platform.ios">iOS — not supported</span>
+            </div>
+        </div>
+    </section>
+
+    
+    <section class="section" id="license">
+        <div class="container narrow center">
+            <h2 class="section-title" data-i18n="license.heading">License</h2>
+            <p class="lead" data-i18n="license.body">Released under the MIT License — © 2026 Maxim Popelnitskiy. Free to use, modify and distribute.</p>
+            <p class="mit-line">MIT License · © 2026 Maxim Popelnitskiy</p>
+        </div>
+    </section>
+
+</main>
+
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <img class="brand-logo" src="logo.png" alt="" width="32" height="32">
+            <div>
+                <strong>Route Spoofer</strong>
+                <p data-i18n="footer.tagline">Android mock-GPS route player for testing location-based apps.</p>
+            </div>
+        </div>
+        <div class="footer-links">
+            <a href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank" data-i18n="footer.github">View on GitHub</a>
+            <span data-i18n="footer.license">MIT License</span>
+            <span>© 2026 Maxim Popelnitskiy</span>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
