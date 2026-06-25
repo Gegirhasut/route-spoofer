@@ -1,6 +1,7 @@
 # Route Spoofer
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Beta-tested via QAProvider](https://img.shields.io/badge/Beta--tested%20via-QAProvider-38b6e6)](https://qaprovider.com/)
 
 🌐 **Landing page:** <https://gegirhasut.github.io/route-spoofer/>
 &nbsp;·&nbsp; 📥 **Download (latest):** <https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk>
@@ -143,10 +144,15 @@ corrections are welcome.
 
 **Android only.** iOS is not supported, as it has no public mock-location API.
 
+## Testing & QA
+
+Beta-tested via **[QAProvider](https://qaprovider.com/)** — independent QA for
+location-based Android apps.
+
 ## License
 
 MIT — © 2026 Maxim Popelnitskiy. See [LICENSE](LICENSE).
 
 ## Author
 
-Maxim Popelnitskiy
+Maxim Popelnitskiy &nbsp;·&nbsp; QA: **[QAProvider](https://qaprovider.com/)**
