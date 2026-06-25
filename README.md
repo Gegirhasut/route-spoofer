@@ -1,5 +1,7 @@
 # Route Spoofer
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A standalone Android app that injects a scripted, moving mock GPS location into the whole device, so any other app reads the fake route as real. Useful for testing location-based apps (e.g. driver/navigation apps) without physically moving.
 
 ## Features
