@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application
         android:allowBackup="true"
@@ -49,7 +50,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- NOTE: ACCESS_MOCK_LOCATION is intentionally omitted. It is a
-         signature/system permission tied to the dev-options mock-app approach;
-         adding it to a normal app breaks installation. -->
+    <!-- Required for the app to appear in Developer options' "Select mock
+         location app" picker. Not granted at runtime; selecting the app in
+         dev options is what authorizes mock injection. -->
+    <uses-permission android:name="android.permission.ACCESS_MOCK_LOCATION"
+        tools:ignore="MockLocation,ProtectedPermissions" />
 </manifest>
