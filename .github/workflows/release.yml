@@ -70,6 +70,27 @@ jobs:
             echo "mode=ephemeral" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Validate keystore & credentials
+        run: |
+          set -e
+          echo "Validating keystore (${{ steps.keystore.outputs.mode }}) for alias '$KEY_ALIAS'…"
+          if ! keytool -list -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>/tmp/store.err; then
+            echo "::error::Cannot open the keystore with KEYSTORE_PASSWORD. Re-check the KEYSTORE_BASE64 and KEYSTORE_PASSWORD secrets (paste the base64 as one line; password must match exactly)."
+            sed 's/^/keytool: /' /tmp/store.err || true
+            exit 1
+          fi
+          if ! keytool -list -alias "$KEY_ALIAS" -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>/tmp/alias.err; then
+            echo "::error::Alias '$KEY_ALIAS' is not in the keystore. Re-check the KEY_ALIAS secret."
+            sed 's/^/keytool: /' /tmp/alias.err || true
+            exit 1
+          fi
+          if ! keytool -certreq -alias "$KEY_ALIAS" -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null 2>/tmp/key.err; then
+            echo "::error::KEY_PASSWORD is wrong for alias '$KEY_ALIAS'. Re-check the KEY_PASSWORD secret."
+            sed 's/^/keytool: /' /tmp/key.err || true
+            exit 1
+          fi
+          echo "Keystore opens, alias present, and key password is correct."
+
       - name: Sync Capacitor (Android)
         run: npx cap sync android
 
