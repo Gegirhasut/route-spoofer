@@ -634,7 +634,7 @@
 
 /* ---------- map provider — single swappable constant ----------
    To use a different basemap later, change these two lines only. */
-const MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+const MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
 const MAP_TILE_OPTS = { maxZoom:20, subdomains:'abcd' };
 const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
@@ -1010,6 +1010,7 @@ const S = {
   waypoints: [],          // [{lat,lng,dwell,dwellMin,legSpeed}]
   markers: [],            // leaflet markers
   polyline: null,
+  polylineCasing: null,
   cum: [0],               // cumulative metres at each waypoint
   total: 0,               // metres
   gpsOn: false,           // broadcasting on/off — the only thing that emits
@@ -1068,10 +1069,13 @@ function recompute(){
 }
 function drawRoute(){
   if(S.polyline) S.polyline.remove();
+  if(S.polylineCasing) S.polylineCasing.remove();
   if(S.waypoints.length>1){
-    S.polyline=L.polyline(S.waypoints.map(p=>[p.lat,p.lng]),
-      {color:getCSS('--route'),weight:4,opacity:.85,dashArray:'1 9',lineCap:'round'}).addTo(map);
-  } else S.polyline=null;
+    const pts=S.waypoints.map(p=>[p.lat,p.lng]);
+    // dark casing under the dotted teal keeps the route legible on light tiles (incl. over water)
+    S.polylineCasing=L.polyline(pts,{color:'#0a2230',weight:6,opacity:.35,lineCap:'round',interactive:false}).addTo(map);
+    S.polyline=L.polyline(pts,{color:getCSS('--route'),weight:4,opacity:1,dashArray:'1 9',lineCap:'round'}).addTo(map);
+  } else { S.polyline=null; S.polylineCasing=null; }
 }
 const wpLabel = i => String.fromCharCode(65+i);            // A, B, C…
 function wpIcon(i){
@@ -1086,7 +1090,7 @@ function refreshMarkers(){
     // the driver's current position continuous when geometry behind it changes)
     const m=L.marker([p.lat,p.lng],{icon:wpIcon(i),draggable:true,zIndexOffset:1000}).addTo(map);
     let dragPos=null;
-    m.on('drag',e=>{ const ll=e.target.getLatLng(); S.waypoints[i].lat=ll.lat; S.waypoints[i].lng=ll.lng; if(S.polyline) S.polyline.setLatLngs(S.waypoints.map(q=>[q.lat,q.lng])); });
+    m.on('drag',e=>{ const ll=e.target.getLatLng(); S.waypoints[i].lat=ll.lat; S.waypoints[i].lng=ll.lng; const pts=S.waypoints.map(q=>[q.lat,q.lng]); if(S.polyline) S.polyline.setLatLngs(pts); if(S.polylineCasing) S.polylineCasing.setLatLngs(pts); });
     m.on('dragend',()=>{ recompute();
       if(S.gpsOn && isNative){ FakeGps.moveWaypoint({index:i,lat:S.waypoints[i].lat,lng:S.waypoints[i].lng}).catch(()=>{}); }
       else if(dragPos){ previewReanchor(dragPos); }
