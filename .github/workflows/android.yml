@@ -25,6 +25,12 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Android SDK Platform 36 (Android 16)
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="sdkmanager"; fi
+          yes | "$SDKMANAGER" "platforms;android-36" >/dev/null
+
       - name: Install dependencies
         run: npm ci
 
