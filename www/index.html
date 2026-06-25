@@ -26,7 +26,7 @@
     font-family:var(--sans); color:var(--text); background:var(--ink);
     overflow:hidden; -webkit-tap-highlight-color:transparent;
   }
-  #map{position:absolute; inset:0; background:#0a0e13; z-index:0}
+  #map{position:absolute; inset:0; background:#eae6de; z-index:0}  /* light backdrop matches Voyager while tiles load */
   .leaflet-container{background:#0a0e13}
   .leaflet-control-zoom{display:none}
   .leaflet-bar a, .leaflet-popup-content-wrapper{background:var(--panel-2); color:var(--text); border:1px solid var(--line)}
@@ -134,6 +134,8 @@
     color:var(--text); border-radius:10px; padding:9px 11px; font:600 14px var(--mono)}
   /* the minutes field sits directly under the dwell toggle (no label), so give it room */
   #wpmMin{margin-top:10px}
+  /* minutes field stays in the layout always; muted + non-editable unless 'minutes' is active */
+  .wpm-num:disabled{opacity:.4; cursor:not-allowed}
   .wpm-remove{margin-top:14px; width:100%; background:var(--panel-2); border:1px solid var(--line-2);
     color:var(--stop); border-radius:10px; padding:10px; font:600 13px var(--sans); cursor:pointer}
 
@@ -520,7 +522,7 @@
           <button data-d="timed" data-i18n="wpm.minutes">minutes</button>
           <button data-d="until-go" data-i18n="wpm.untilGo">Until GO</button>
         </div>
-        <input id="wpmMin" class="wpm-num" type="number" min="1" step="1" value="2" hidden />
+        <input id="wpmMin" class="wpm-num" type="number" min="1" step="1" value="2" disabled />
         <label class="wpm-l" data-i18n="wpm.speed">Speed to here (km/h)</label>
         <input id="wpmSpeed" class="wpm-num" type="number" min="1" max="300" placeholder="—" />
         <button id="wpmRemove" class="wpm-remove" data-i18n="wpm.remove">Remove</button>
@@ -1411,7 +1413,7 @@ function openWpMenu(i){
   wpMenuIdx=i; const wp=S.waypoints[i];   // every waypoint is editable — always show the full menu
   $('wpmTitle').textContent='· '+wpLabel(i);
   document.querySelectorAll('#wpmDwellSeg button').forEach(b=>b.classList.toggle('on', b.dataset.d===(wp.dwell||'none')));
-  $('wpmMin').hidden = (wp.dwell!=='timed'); $('wpmMin').value = wp.dwellMin||2;
+  $('wpmMin').disabled = (wp.dwell!=='timed'); $('wpmMin').value = wp.dwellMin||2;
   $('wpmSpeed').value = (wp.legSpeed!=null)?wp.legSpeed:'';
   $('wpMenu').hidden=false;
 }
@@ -1429,7 +1431,7 @@ $('wpMenu').onclick=e=>{ if(e.target.id==='wpMenu') closeWpMenu(); };          /
 $('wpmDwellSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b||wpMenuIdx<0)return;
   S.waypoints[wpMenuIdx].dwell=b.dataset.d;
   document.querySelectorAll('#wpmDwellSeg button').forEach(x=>x.classList.toggle('on',x===b));
-  $('wpmMin').hidden = b.dataset.d!=='timed';
+  $('wpmMin').disabled = b.dataset.d!=='timed';
   pushWpEdit(); };
 $('wpmMin').oninput=()=>{ if(wpMenuIdx<0)return; S.waypoints[wpMenuIdx].dwellMin=Math.max(1,+$('wpmMin').value||1); pushWpEdit(); };
 $('wpmSpeed').oninput=()=>{ if(wpMenuIdx<0)return; const v=+$('wpmSpeed').value; S.waypoints[wpMenuIdx].legSpeed=(v>0)?v:null; pushWpEdit(); };
