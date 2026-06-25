@@ -84,6 +84,12 @@ class MockLocationService : Service() {
             ACTION_APPEND_WAYPOINT ->
                 engine.appendPoint(LatLng(intent.getDoubleExtra(EXTRA_LAT, 0.0), intent.getDoubleExtra(EXTRA_LNG, 0.0)))
             ACTION_SET_WAYPOINT -> editWaypoint(intent)
+            ACTION_REMOVE_WAYPOINT -> engine.removeWaypoint(intent.getIntExtra(EXTRA_INDEX, -1))
+            ACTION_MOVE_WAYPOINT ->
+                engine.moveWaypoint(
+                    intent.getIntExtra(EXTRA_INDEX, -1),
+                    LatLng(intent.getDoubleExtra(EXTRA_LAT, 0.0), intent.getDoubleExtra(EXTRA_LNG, 0.0)),
+                )
         }
         // Push an immediate snapshot so the UI reflects commands without waiting a tick.
         if (gpsOn) emit(engine.state(speedKmh)) else fixListener?.invoke(emitJson(engine.state(speedKmh)))
@@ -272,6 +278,8 @@ class MockLocationService : Service() {
         const val ACTION_SET_LOOP = "com.routespoofer.app.SET_LOOP"
         const val ACTION_APPEND_WAYPOINT = "com.routespoofer.app.APPEND_WAYPOINT"
         const val ACTION_SET_WAYPOINT = "com.routespoofer.app.SET_WAYPOINT"
+        const val ACTION_REMOVE_WAYPOINT = "com.routespoofer.app.REMOVE_WAYPOINT"
+        const val ACTION_MOVE_WAYPOINT = "com.routespoofer.app.MOVE_WAYPOINT"
 
         const val EXTRA_WAYPOINTS = "waypoints"
         const val EXTRA_SPEED = "speedKmh"

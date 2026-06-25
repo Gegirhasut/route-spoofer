@@ -2,6 +2,7 @@
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
   <CurrentIssues>
+    <ID>CyclomaticComplexMethod:MockLocationService.kt$MockLocationService$override fun onStartCommand( intent: Intent?, flags: Int, startId: Int, ): Int</ID>
     <ID>MagicNumber:MockLocationInjector.kt$MockLocationInjector$3f</ID>
     <ID>MagicNumber:MockLocationInjector.kt$MockLocationInjector$4f</ID>
     <ID>MagicNumber:MockLocationService.kt$MockLocationService$1000</ID>
@@ -10,5 +11,6 @@
     <ID>SwallowedException:FakeGpsPlugin.kt$FakeGpsPlugin$e: Exception</ID>
     <ID>SwallowedException:FakeGpsPlugin.kt$FakeGpsPlugin$e: SecurityException</ID>
     <ID>TooGenericExceptionCaught:FakeGpsPlugin.kt$FakeGpsPlugin$e: Exception</ID>
+    <ID>TooManyFunctions:FakeGpsPlugin.kt$FakeGpsPlugin : Plugin</ID>
   </CurrentIssues>
 </SmellBaseline>

@@ -147,6 +147,28 @@ class FakeGpsPlugin : Plugin() {
         call.resolve()
     }
 
+    /** Move a future (unlocked) waypoint. */
+    @PluginMethod
+    fun moveWaypoint(call: PluginCall) {
+        startService(
+            serviceIntent(MockLocationService.ACTION_MOVE_WAYPOINT)
+                .putExtra(MockLocationService.EXTRA_INDEX, call.getInt("index") ?: -1)
+                .putExtra(MockLocationService.EXTRA_LAT, call.getDouble("lat") ?: 0.0)
+                .putExtra(MockLocationService.EXTRA_LNG, call.getDouble("lng") ?: 0.0),
+        )
+        call.resolve()
+    }
+
+    /** Remove a future (unlocked) waypoint. */
+    @PluginMethod
+    fun removeWaypoint(call: PluginCall) {
+        startService(
+            serviceIntent(MockLocationService.ACTION_REMOVE_WAYPOINT)
+                .putExtra(MockLocationService.EXTRA_INDEX, call.getInt("index") ?: -1),
+        )
+        call.resolve()
+    }
+
     /** Edit a future waypoint's dwell and/or per-leg speed. */
     @PluginMethod
     fun setWaypoint(call: PluginCall) {
