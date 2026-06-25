@@ -72,24 +72,55 @@ jobs:
 
       - name: Validate keystore & credentials
         run: |
+          # Load the keystore and actually recover the private key exactly the way
+          # Gradle's signing does — this catches the PKCS12 case where keytool
+          # ignores a separate -keypass (so KEY_PASSWORD must equal the store
+          # password). keytool -certreq would silently pass that bad case.
+          cat > "$RUNNER_TEMP/KeyCheck.java" <<'JAVA'
+          import java.io.FileInputStream;
+          import java.security.KeyStore;
+          import java.security.UnrecoverableKeyException;
+          public class KeyCheck {
+              public static void main(String[] args) {
+                  String path = System.getenv("KEYSTORE_PATH");
+                  String storePass = System.getenv("KEYSTORE_PASSWORD");
+                  String alias = System.getenv("KEY_ALIAS");
+                  String keyPass = System.getenv("KEY_PASSWORD");
+                  KeyStore ks = null;
+                  try {
+                      ks = KeyStore.getInstance("PKCS12");
+                      try (FileInputStream f = new FileInputStream(path)) {
+                          ks.load(f, storePass == null ? null : storePass.toCharArray());
+                      }
+                  } catch (Exception e) {
+                      System.err.println("STORE: " + e.getMessage());
+                      System.exit(2);
+                  }
+                  try {
+                      if (!ks.containsAlias(alias)) { System.err.println("ALIAS: '" + alias + "' not found"); System.exit(3); }
+                      if (ks.getKey(alias, keyPass == null ? new char[0] : keyPass.toCharArray()) == null) {
+                          System.err.println("ALIAS: '" + alias + "' has no key"); System.exit(3);
+                      }
+                  } catch (UnrecoverableKeyException e) {
+                      System.err.println("KEYPASS"); System.exit(4);
+                  } catch (Exception e) {
+                      System.err.println("OTHER: " + e.getMessage()); System.exit(5);
+                  }
+                  System.out.println("ok");
+              }
+          }
+          JAVA
+          javac -d "$RUNNER_TEMP" "$RUNNER_TEMP/KeyCheck.java"
+          set +e
+          OUT=$(java -cp "$RUNNER_TEMP" KeyCheck 2>&1); CODE=$?
           set -e
-          echo "Validating keystore (${{ steps.keystore.outputs.mode }}) for alias '$KEY_ALIAS'…"
-          if ! keytool -list -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>/tmp/store.err; then
-            echo "::error::Cannot open the keystore with KEYSTORE_PASSWORD. Re-check the KEYSTORE_BASE64 and KEYSTORE_PASSWORD secrets (paste the base64 as one line; password must match exactly)."
-            sed 's/^/keytool: /' /tmp/store.err || true
-            exit 1
-          fi
-          if ! keytool -list -alias "$KEY_ALIAS" -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" >/dev/null 2>/tmp/alias.err; then
-            echo "::error::Alias '$KEY_ALIAS' is not in the keystore. Re-check the KEY_ALIAS secret."
-            sed 's/^/keytool: /' /tmp/alias.err || true
-            exit 1
-          fi
-          if ! keytool -certreq -alias "$KEY_ALIAS" -keystore "$KEYSTORE_PATH" -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" >/dev/null 2>/tmp/key.err; then
-            echo "::error::KEY_PASSWORD is wrong for alias '$KEY_ALIAS'. Re-check the KEY_PASSWORD secret."
-            sed 's/^/keytool: /' /tmp/key.err || true
-            exit 1
-          fi
-          echo "Keystore opens, alias present, and key password is correct."
+          case "$CODE" in
+            0) echo "Keystore opens, alias '$KEY_ALIAS' present, key recovered with KEY_PASSWORD. ($OUT)" ;;
+            2) echo "::error::Cannot open the keystore with KEYSTORE_PASSWORD — re-check KEYSTORE_BASE64 / KEYSTORE_PASSWORD. ($OUT)"; exit 1 ;;
+            3) echo "::error::$OUT — re-check the KEY_ALIAS secret."; exit 1 ;;
+            4) echo "::error::KEY_PASSWORD does not unlock the key. For a PKCS12 keystore the key password equals the store password — set KEY_PASSWORD to the same value as KEYSTORE_PASSWORD."; exit 1 ;;
+            *) echo "::error::Keystore validation failed: $OUT"; exit 1 ;;
+          esac
 
       - name: Sync Capacitor (Android)
         run: npx cap sync android
