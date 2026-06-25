@@ -192,12 +192,13 @@
   }
 
   /* ---------- setup / readiness card ---------- */
-  #setup{
+  #setup,#devhelp{
     position:absolute; z-index:700; left:0; right:0; top:0; bottom:0;
     display:none; align-items:center; justify-content:center; padding:20px;
     background:rgba(8,11,15,.72); backdrop-filter:blur(3px);
   }
-  #setup.show{display:flex}
+  #devhelp{z-index:710}
+  #setup.show,#devhelp.show{display:flex}
   .setup-card{
     width:100%; max-width:380px; background:var(--panel); border:1px solid var(--line-2);
     border-radius:16px; padding:18px 18px 16px; box-shadow:0 18px 60px rgba(0,0,0,.6);
@@ -220,6 +221,21 @@
   }
   .setup-actions button.primary{background:var(--signal); color:var(--signal-ink); border-color:transparent}
   .setup-actions button:active{transform:scale(.98)}
+
+  /* numbered how-to steps (dev-options helper) */
+  .dev-steps{margin:6px 0 2px; padding:0; list-style:none; counter-reset:step}
+  .dev-steps li{
+    position:relative; padding:9px 0 9px 34px; border-top:1px solid var(--line);
+    font:500 12px/1.5 var(--sans); color:var(--text); counter-increment:step;
+  }
+  .dev-steps li::before{
+    content:counter(step); position:absolute; left:0; top:8px;
+    width:22px;height:22px;border-radius:50%; display:grid;place-items:center;
+    font:700 12px/1 var(--mono); background:var(--panel-2); border:1px solid var(--signal); color:var(--signal);
+  }
+  .dev-steps li b{color:var(--text); font-weight:600}
+  .dev-steps li small{display:block; color:var(--muted); font:500 11px/1.4 var(--sans); margin-top:2px}
+  .dev-note{margin:10px 0 0; font:500 11px/1.4 var(--sans); color:var(--muted); opacity:.85}
 
   @media (min-width:760px){
     #deck{left:auto; right:14px; bottom:14px; width:380px; border-radius:16px; border:1px solid var(--line-2)}
@@ -338,6 +354,26 @@
         <button id="btnDev">Open Developer options</button>
         <button id="btnRecheck">Re-check</button>
         <button id="btnDismiss" style="color:var(--muted)">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- developer-options-off helper (native only) -->
+  <div id="devhelp">
+    <div class="setup-card">
+      <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> Developer options are off</h2>
+      <p>Mock GPS needs Android <b>Developer options</b> enabled — a one-time setting. Turn it on, then come back and re-check.</p>
+      <ol class="dev-steps">
+        <li>Open <b>Settings → About phone</b><small>On Samsung: → Software information.</small></li>
+        <li>Tap <b>Build number</b> 7 times</li>
+        <li>Enter your PIN/password if asked</li>
+        <li>Come back here and tap <b>Re-check</b></li>
+      </ol>
+      <p class="dev-note">The exact path varies slightly by phone brand.</p>
+      <div class="setup-actions">
+        <button class="primary" id="btnAbout">Open About phone</button>
+        <button id="btnDevRecheck">Re-check</button>
+        <button id="btnDevClose" style="color:var(--muted)">Close</button>
       </div>
     </div>
   </div>
@@ -731,10 +767,12 @@ function getCSS(v){ return getComputedStyle(document.documentElement).getPropert
    ===================================================================== */
 let lastReady=null;
 async function refreshReady(){
-  if(!isNative || !FakeGps){ return { ready:true, locationPermission:true, notificationPermission:true, mockAppEnabled:true }; }
+  if(!isNative || !FakeGps){ return { ready:true, locationPermission:true, notificationPermission:true, mockAppEnabled:true, devOptionsEnabled:true }; }
   try{ lastReady = await FakeGps.ensureReady(); }
-  catch(e){ console.warn('ensureReady failed',e); lastReady={ ready:false, locationPermission:false, notificationPermission:false, mockAppEnabled:false }; }
+  catch(e){ console.warn('ensureReady failed',e); lastReady={ ready:false, locationPermission:false, notificationPermission:false, mockAppEnabled:false, devOptionsEnabled:true }; }
   paintReady(lastReady);
+  // If dev options came back on while the helper was open, drop it and continue setup.
+  if(lastReady.devOptionsEnabled && $('devhelp').classList.contains('show')) closeDevHelp();
   return lastReady;
 }
 function paintReady(st){
@@ -745,10 +783,28 @@ function paintReady(st){
 }
 function openSetup(){ refreshReady(); $('setup').classList.add('show'); }
 function closeSetup(){ $('setup').classList.remove('show'); }
+function openDevHelp(){ $('devhelp').classList.add('show'); }
+function closeDevHelp(){ $('devhelp').classList.remove('show'); }
 $('btnGrant').onclick=async ()=>{ if(FakeGps){ try{ await FakeGps.requestPermissions(); }catch(e){ console.warn(e);} } await refreshReady(); };
-$('btnDev').onclick=async ()=>{ if(FakeGps){ try{ await FakeGps.openDevSettings(); }catch(e){ console.warn(e);} } };
+$('btnDev').onclick=async ()=>{
+  if(!FakeGps) return;
+  // Only fire the dev-settings intent if Developer options are actually on —
+  // otherwise Android shows a dead-end system toast. Guide the user instead.
+  let on=true;
+  try{ const r=await FakeGps.isDevOptionsEnabled(); on=!!(r&&r.enabled); }
+  catch(e){ console.warn(e); on = lastReady ? lastReady.devOptionsEnabled!==false : true; }
+  if(on){ try{ await FakeGps.openDevSettings(); }catch(e){ console.warn(e);} }
+  else openDevHelp();
+};
 $('btnRecheck').onclick=async ()=>{ const st=await refreshReady(); if(st.ready){ closeSetup(); flashHint('Ready — tap play.'); } };
 $('btnDismiss').onclick=closeSetup;
+$('btnAbout').onclick=async ()=>{ if(FakeGps){ try{ await FakeGps.openAboutPhone(); }catch(e){ console.warn(e);} } };
+$('btnDevRecheck').onclick=async ()=>{
+  const st=await refreshReady();
+  if(st && st.devOptionsEnabled){ closeDevHelp(); flashHint('Developer options on — now pick the mock app.'); }
+  else flashHint('Still off — enable Developer options to continue.');
+};
+$('btnDevClose').onclick=closeDevHelp;
 
 /* ---------- boot ---------- */
 restore();

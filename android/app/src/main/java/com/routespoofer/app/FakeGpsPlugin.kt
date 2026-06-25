@@ -1,11 +1,15 @@
 package com.routespoofer.app
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.location.LocationManager
 import android.os.Build
 import android.provider.Settings
+import androidx.core.app.NotificationCompat
 import com.getcapacitor.JSObject
 import com.getcapacitor.PermissionState
 import com.getcapacitor.Plugin
@@ -100,12 +104,26 @@ class FakeGpsPlugin : Plugin() {
     val notifOk = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
       getPermissionState("notifications") == PermissionState.GRANTED else true
     val mockOk = isMockAppSelected()
+    val devOk = isDevOptionsOn()
+
+    // Keep a persistent, dismissible nudge alive only while dev options are off,
+    // so the guidance survives the user leaving the app to flip the setting.
+    if (devOk) clearDevOptionsNotice() else postDevOptionsNotice()
 
     val res = JSObject()
     res.put("locationPermission", locationOk)
     res.put("notificationPermission", notifOk)
     res.put("mockAppEnabled", mockOk)
+    res.put("devOptionsEnabled", devOk)
     res.put("ready", locationOk && notifOk && mockOk)
+    call.resolve(res)
+  }
+
+  /** Whether Android Developer options are enabled (the gate for mock-app selection). */
+  @PluginMethod
+  fun isDevOptionsEnabled(call: PluginCall) {
+    val res = JSObject()
+    res.put("enabled", isDevOptionsOn())
     call.resolve(res)
   }
 
@@ -149,7 +167,66 @@ class FakeGpsPlugin : Plugin() {
     call.resolve()
   }
 
+  /**
+   * Open the "About phone" / device-info screen so the user lands near the
+   * Build number tap target. Falls back to the top-level Settings screen.
+   */
+  @PluginMethod
+  fun openAboutPhone(call: PluginCall) {
+    try {
+      val intent = Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)
+        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+      context.startActivity(intent)
+    } catch (e: Exception) {
+      try {
+        context.startActivity(
+          Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+      } catch (_: Exception) {}
+    }
+    call.resolve()
+  }
+
   // ----------------------------------------------------------------- helpers
+
+  private fun isDevOptionsOn(): Boolean =
+    Settings.Global.getInt(
+      context.contentResolver, Settings.Global.DEVELOPMENT_SETTINGS_ENABLED, 0
+    ) == 1
+
+  /**
+   * Low-priority, dismissible reminder shown while Developer options are off.
+   * Tapping it reopens Route Spoofer so the readiness guidance is one tap away.
+   */
+  private fun postDevOptionsNotice() {
+    val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val ch = NotificationChannel(
+        DEV_CHANNEL_ID, "Setup guidance", NotificationManager.IMPORTANCE_LOW
+      ).apply { description = "Reminds you to enable Developer options for mock GPS" }
+      nm.createNotificationChannel(ch)
+    }
+    val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+    val pi = PendingIntent.getActivity(
+      context, 1, launch,
+      PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    val notif = NotificationCompat.Builder(context, DEV_CHANNEL_ID)
+      .setContentTitle("Enable Developer options to use Route Spoofer")
+      .setContentText("Mock GPS needs Android Developer options on. Tap to see how.")
+      .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+      .setPriority(NotificationCompat.PRIORITY_LOW)
+      .setOngoing(false)
+      .setAutoCancel(true)
+      .setContentIntent(pi)
+      .build()
+    try { nm.notify(DEV_NOTIF_ID, notif) } catch (_: Exception) {}
+  }
+
+  private fun clearDevOptionsNotice() {
+    val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    try { nm.cancel(DEV_NOTIF_ID) } catch (_: Exception) {}
+  }
 
   private fun serviceIntent(action: String): Intent =
     Intent(context, MockLocationService::class.java).setAction(action)
@@ -167,5 +244,7 @@ class FakeGpsPlugin : Plugin() {
 
   companion object {
     private const val PROBE_PROVIDER = "route-spoofer-probe"
+    private const val DEV_CHANNEL_ID = "route_spoofer_devopts"
+    private const val DEV_NOTIF_ID = 4712
   }
 }
