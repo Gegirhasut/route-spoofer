@@ -74,8 +74,8 @@
     display:flex; flex-direction:column; gap:12px;
   }
   .deck-grab{display:block; width:100%; background:none; border:0; padding:7px 0 5px; cursor:pointer; touch-action:none}
-  .deck-handle{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto; transition:background .15s}
-  .deck-grab:hover .deck-handle,.deck-grab:active .deck-handle{background:var(--muted)}
+  .deck-handle{display:block; width:40px;height:5px;border-radius:99px;background:var(--muted);opacity:.85;margin:0 auto; transition:background .15s,opacity .15s}
+  .deck-grab:hover .deck-handle,.deck-grab:active .deck-handle{background:var(--text);opacity:1}
   /* collapsible body — everything below the transport row folds away */
   #deckBody{display:flex; flex-direction:column; gap:12px; overflow:hidden; max-height:70vh; opacity:1;
     transition:max-height .28s ease, opacity .2s ease}
