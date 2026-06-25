@@ -29,6 +29,34 @@ Two paths are supported — see [BUILD.md](BUILD.md) for full details.
 
 Toolchain note: this project targets the Capacitor 7 / JDK 21 toolchain.
 
+## Development
+
+The native code is split into focused pieces: `RouteEngine` (pure movement
+math — arc length, interpolation, bearing, loop modes; no Android deps, unit
+tested), `MockLocationInjector` (the GPS + NETWORK test-provider plumbing),
+`MockLocationService` (foreground-service lifecycle + notification + playback
+clock) and `FakeGpsPlugin` (the Capacitor JS bridge).
+
+Run the same checks CI runs (CI runs them before building the APK):
+
+```bash
+# Kotlin unit tests (RouteEngine — runs on the JVM, no emulator)
+cd android && ./gradlew test
+
+# Auto-format Kotlin (ktlint)
+cd android && ./gradlew ktlintFormat
+# Verify formatting without changing files
+cd android && ./gradlew ktlintCheck
+
+# Static analysis (detekt); legacy findings are grandfathered in
+# android/app/config/detekt/baseline.xml, new issues fail the build
+cd android && ./gradlew detekt
+
+# Lint the web UI (ESLint + eslint-plugin-html, lints the inline JS in www/)
+npm run lint
+npm run lint:fix   # safe auto-fixes only
+```
+
 ## Phone setup
 
 1. Enable **Developer options**: tap **Settings → About phone → Build number** seven times.
