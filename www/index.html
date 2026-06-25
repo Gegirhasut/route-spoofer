@@ -73,7 +73,14 @@
     padding:10px 14px calc(env(safe-area-inset-bottom) + 12px);
     display:flex; flex-direction:column; gap:12px;
   }
-  .deck-handle{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto 2px}
+  .deck-grab{display:block; width:100%; background:none; border:0; padding:7px 0 5px; cursor:pointer; touch-action:none}
+  .deck-handle{width:38px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto; transition:background .15s}
+  .deck-grab:hover .deck-handle,.deck-grab:active .deck-handle{background:var(--muted)}
+  /* collapsible body — everything below the transport row folds away */
+  #deckBody{display:flex; flex-direction:column; gap:12px; overflow:hidden; max-height:70vh; opacity:1;
+    transition:max-height .28s ease, opacity .2s ease}
+  body.deck-collapsed #deckBody{max-height:0; opacity:0}
+  body.deck-collapsed #deck{gap:4px}
 
   .transport{display:flex; align-items:center; gap:14px}
   .gps-btn{
@@ -290,11 +297,24 @@
     transform-origin:50% 100%; margin:-13px 0 0 -5px;}
 
   .hint{
-    position:absolute; z-index:550; left:50%; top:64px; transform:translateX(-50%);
+    position:absolute; z-index:550; left:50%; top:calc(env(safe-area-inset-top) + 102px); transform:translateX(-50%);
     background:var(--panel); border:1px solid var(--line-2); color:var(--muted);
     font:500 12px/1 var(--sans); padding:9px 14px; border-radius:99px; pointer-events:none;
-    box-shadow:0 6px 20px rgba(0,0,0,.4); white-space:nowrap; transition:opacity .3s;
+    box-shadow:0 6px 20px rgba(0,0,0,.4); white-space:nowrap; transition:opacity .3s; max-width:calc(100% - 24px);
   }
+
+  /* place / address search over the map */
+  .searchbar{
+    position:absolute; z-index:580; top:calc(env(safe-area-inset-top) + 54px); left:50%; transform:translateX(-50%);
+    width:min(420px, calc(100% - 24px)); display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line-2); border-radius:999px; padding:8px 14px;
+    box-shadow:0 6px 20px rgba(0,0,0,.4);
+  }
+  .searchbar.busy{opacity:.7}
+  .search-ic{width:16px;height:16px;fill:var(--muted);flex:none}
+  #searchInput{flex:1; min-width:0; background:none; border:0; outline:none; color:var(--text); font:500 13px/1 var(--sans)}
+  #searchInput::placeholder{color:var(--muted)}
+  #searchInput::-webkit-search-cancel-button{filter:invert(.6)}
 
   /* ---------- setup / readiness card ---------- */
   #setup,#devhelp{
@@ -362,10 +382,15 @@
     </div>
   </div>
 
+  <form id="searchBar" class="searchbar" role="search" autocomplete="off">
+    <svg class="search-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 20l-5.2-5.2a7 7 0 10-1.4 1.4L20 21l1-1zM5 10a5 5 0 1110 0 5 5 0 01-10 0z"/></svg>
+    <input id="searchInput" type="search" enterkeyhint="search" data-i18n-ph="search.ph" placeholder="Search a place or address…" aria-label="Search a place or address" />
+  </form>
+
   <div class="hint" id="hint">Tap the map to drop point A, then B, then C…</div>
 
   <div id="deck">
-    <div class="deck-handle"></div>
+    <button id="deckGrab" class="deck-grab" aria-label="Collapse panel" aria-expanded="true"><span class="deck-handle"></span></button>
 
     <div class="transport">
       <button class="gps-btn" id="gps" data-i18n-title="gps.off" title="GPS off" aria-pressed="false">
@@ -387,6 +412,7 @@
       </button>
     </div>
 
+    <div id="deckBody">
     <div class="rail"><i id="railFill"></i></div>
 
     <div class="row">
@@ -464,6 +490,7 @@
     </div>
 
     <div class="credit">Route Spoofer <span id="appVersion">v1.0</span> · by <b>Maxim Popelnitskiy</b></div>
+    </div><!-- /#deckBody -->
   </div>
 
   <!-- readiness / setup overlay (native only) -->
@@ -661,7 +688,7 @@ const I18N = {
     'state.ready':'Ready','state.emitting':'Emitting','state.paused':'Paused',
     'status.standing':'Standing','status.driving':'Driving','status.arrived':'Arrived','status.waitingGo':'Waiting for GO','status.waitingAt':'Waiting','status.atWp':'at','gps.on':'GPS on','gps.off':'GPS off','go.go':'GO','go.pause':'Pause','wpm.dwell':'Wait here','wpm.none':'None','wpm.minutes':'minutes','wpm.untilGo':'Until GO','wpm.speed':'Speed to here (km/h)','wpm.remove':'Remove','wpm.close':'Close',
     'hud.speed':'Speed','hud.heading':'Heading','hud.progress':'Progress','hud.distance':'Distance',
-    'hint.tapMap':'Tap the map to drop point A, then B, then C…',
+    'hint.tapMap':'Tap the map to drop point A, then B, then C…','search.ph':'Search a place or address…','search.searching':'Searching…','search.notFound':'No place found.','search.error':'Search failed — try again.',
     'live.seg':'seg','live.emit':'emit','live.elapsed':'elapsed','live.noRoute':'no route',
     'field.speed':'Speed','field.emitEvery':'Emit every','field.loop':'Loop',
     'loop.off':'Off','loop.restart':'Restart','loop.pingpong':'Ping-pong',
@@ -697,7 +724,7 @@ const I18N = {
     'state.ready':'Готов','state.emitting':'Передача','state.paused':'Пауза',
     'status.standing':'Стоит','status.driving':'Едет','status.arrived':'Прибыл','status.waitingGo':'Ожидание GO','status.waitingAt':'Ожидание','status.atWp':'у','gps.on':'GPS вкл','gps.off':'GPS выкл','go.go':'СТАРТ','go.pause':'Пауза','wpm.dwell':'Ждать здесь','wpm.none':'Нет','wpm.minutes':'минут','wpm.untilGo':'До GO','wpm.speed':'Скорость сюда (км/ч)','wpm.remove':'Удалить','wpm.close':'Закрыть',
     'hud.speed':'Скорость','hud.heading':'Курс','hud.progress':'Прогресс','hud.distance':'Расстояние',
-    'hint.tapMap':'Коснитесь карты, чтобы поставить точку A, затем B, C…',
+    'hint.tapMap':'Коснитесь карты, чтобы поставить точку A, затем B, C…','search.ph':'Поиск места или адреса…','search.searching':'Поиск…','search.notFound':'Место не найдено.','search.error':'Ошибка поиска — повторите.',
     'live.seg':'сегм','live.emit':'выдача','live.elapsed':'прошло','live.noRoute':'нет маршрута',
     'field.speed':'Скорость','field.emitEvery':'Передавать каждые','field.loop':'Цикл',
     'loop.off':'Выкл','loop.restart':'Заново','loop.pingpong':'Туда-обратно',
@@ -733,7 +760,7 @@ const I18N = {
     'state.ready':'Bereit','state.emitting':'Sendet','state.paused':'Pausiert',
     'status.standing':'Steht','status.driving':'Fährt','status.arrived':'Angekommen','status.waitingGo':'Warten auf GO','status.waitingAt':'Warten','status.atWp':'an','gps.on':'GPS an','gps.off':'GPS aus','go.go':'LOS','go.pause':'Pause','wpm.dwell':'Hier warten','wpm.none':'Keine','wpm.minutes':'Minuten','wpm.untilGo':'Bis LOS','wpm.speed':'Tempo hierher (km/h)','wpm.remove':'Entfernen','wpm.close':'Schließen',
     'hud.speed':'Tempo','hud.heading':'Kurs','hud.progress':'Fortschritt','hud.distance':'Distanz',
-    'hint.tapMap':'Tippe auf die Karte für Punkt A, dann B, dann C…',
+    'hint.tapMap':'Tippe auf die Karte für Punkt A, dann B, dann C…','search.ph':'Ort oder Adresse suchen…','search.searching':'Suche…','search.notFound':'Kein Ort gefunden.','search.error':'Suche fehlgeschlagen — erneut versuchen.',
     'live.seg':'Seg','live.emit':'Senden','live.elapsed':'Dauer','live.noRoute':'keine Route',
     'field.speed':'Tempo','field.emitEvery':'Senden alle','field.loop':'Schleife',
     'loop.off':'Aus','loop.restart':'Neustart','loop.pingpong':'Pingpong',
@@ -769,7 +796,7 @@ const I18N = {
     'state.ready':'Listo','state.emitting':'Emitiendo','state.paused':'En pausa',
     'status.standing':'Parado','status.driving':'Conduciendo','status.arrived':'Llegó','status.waitingGo':'Esperando GO','status.waitingAt':'Esperando','status.atWp':'en','gps.on':'GPS act.','gps.off':'GPS desact.','go.go':'IR','go.pause':'Pausa','wpm.dwell':'Esperar aquí','wpm.none':'Ninguna','wpm.minutes':'minutos','wpm.untilGo':'Hasta IR','wpm.speed':'Velocidad hasta aquí (km/h)','wpm.remove':'Eliminar','wpm.close':'Cerrar',
     'hud.speed':'Velocidad','hud.heading':'Rumbo','hud.progress':'Progreso','hud.distance':'Distancia',
-    'hint.tapMap':'Toca el mapa para poner el punto A, luego B, luego C…',
+    'hint.tapMap':'Toca el mapa para poner el punto A, luego B, luego C…','search.ph':'Buscar un lugar o dirección…','search.searching':'Buscando…','search.notFound':'No se encontró el lugar.','search.error':'Error de búsqueda — inténtalo de nuevo.',
     'live.seg':'seg','live.emit':'emisión','live.elapsed':'tiempo','live.noRoute':'sin ruta',
     'field.speed':'Velocidad','field.emitEvery':'Emitir cada','field.loop':'Bucle',
     'loop.off':'No','loop.restart':'Reiniciar','loop.pingpong':'Ida y vuelta',
@@ -805,7 +832,7 @@ const I18N = {
     'state.ready':'Pronto','state.emitting':'Emitindo','state.paused':'Pausado',
     'status.standing':'Parado','status.driving':'Dirigindo','status.arrived':'Chegou','status.waitingGo':'Aguardando GO','status.waitingAt':'Aguardando','status.atWp':'em','gps.on':'GPS lig.','gps.off':'GPS desl.','go.go':'IR','go.pause':'Pausar','wpm.dwell':'Esperar aqui','wpm.none':'Nenhuma','wpm.minutes':'minutos','wpm.untilGo':'Até IR','wpm.speed':'Velocidade até aqui (km/h)','wpm.remove':'Remover','wpm.close':'Fechar',
     'hud.speed':'Velocidade','hud.heading':'Direção','hud.progress':'Progresso','hud.distance':'Distância',
-    'hint.tapMap':'Toque no mapa para marcar o ponto A, depois B, depois C…',
+    'hint.tapMap':'Toque no mapa para marcar o ponto A, depois B, depois C…','search.ph':'Buscar um lugar ou endereço…','search.searching':'Buscando…','search.notFound':'Nenhum lugar encontrado.','search.error':'Falha na busca — tente de novo.',
     'live.seg':'seg','live.emit':'emissão','live.elapsed':'tempo','live.noRoute':'sem rota',
     'field.speed':'Velocidade','field.emitEvery':'Emitir a cada','field.loop':'Repetição',
     'loop.off':'Desl.','loop.restart':'Reiniciar','loop.pingpong':'Vai e volta',
@@ -841,7 +868,7 @@ const I18N = {
     'state.ready':'Prêt','state.emitting':'Émission','state.paused':'En pause',
     'status.standing':'Arrêté','status.driving':'En route','status.arrived':'Arrivé','status.waitingGo':'En attente de GO','status.waitingAt':'Attente','status.atWp':'à','gps.on':'GPS activé','gps.off':'GPS désactivé','go.go':'GO','go.pause':'Pause','wpm.dwell':'Attendre ici','wpm.none':'Aucune','wpm.minutes':'minutes','wpm.untilGo':"Jusqu'à GO",'wpm.speed':'Vitesse jusqu’ici (km/h)','wpm.remove':'Supprimer','wpm.close':'Fermer',
     'hud.speed':'Vitesse','hud.heading':'Cap','hud.progress':'Progression','hud.distance':'Distance',
-    'hint.tapMap':'Touchez la carte pour placer le point A, puis B, puis C…',
+    'hint.tapMap':'Touchez la carte pour placer le point A, puis B, puis C…','search.ph':'Rechercher un lieu ou une adresse…','search.searching':'Recherche…','search.notFound':'Aucun lieu trouvé.','search.error':'Échec de la recherche — réessayez.',
     'live.seg':'seg','live.emit':'émission','live.elapsed':'temps','live.noRoute':'aucun trajet',
     'field.speed':'Vitesse','field.emitEvery':'Émettre toutes les','field.loop':'Boucle',
     'loop.off':'Désact.','loop.restart':'Redémarrer','loop.pingpong':'Aller-retour',
@@ -877,7 +904,7 @@ const I18N = {
     'state.ready':'就绪','state.emitting':'发送中','state.paused':'已暂停',
     'status.standing':'停止','status.driving':'行驶中','status.arrived':'已到达','status.waitingGo':'等待 GO','status.waitingAt':'等待','status.atWp':'于','gps.on':'GPS 开','gps.off':'GPS 关','go.go':'出发','go.pause':'暂停','wpm.dwell':'在此等待','wpm.none':'无','wpm.minutes':'分钟','wpm.untilGo':'直到 GO','wpm.speed':'到此速度 (km/h)','wpm.remove':'删除','wpm.close':'关闭',
     'hud.speed':'速度','hud.heading':'航向','hud.progress':'进度','hud.distance':'距离',
-    'hint.tapMap':'点击地图放置点 A，然后 B、C…',
+    'hint.tapMap':'点击地图放置点 A，然后 B、C…','search.ph':'搜索地点或地址…','search.searching':'搜索中…','search.notFound':'未找到地点。','search.error':'搜索失败，请重试。',
     'live.seg':'段','live.emit':'发送','live.elapsed':'用时','live.noRoute':'无路线',
     'field.speed':'速度','field.emitEvery':'发送间隔','field.loop':'循环',
     'loop.off':'关','loop.restart':'重新开始','loop.pingpong':'往返',
@@ -913,7 +940,7 @@ const I18N = {
     'state.ready':'तैयार','state.emitting':'भेज रहा है','state.paused':'रुका हुआ',
     'status.standing':'खड़ा','status.driving':'चल रहा है','status.arrived':'पहुँच गया','status.waitingGo':'GO का इंतज़ार','status.waitingAt':'इंतज़ार','status.atWp':'पर','gps.on':'GPS चालू','gps.off':'GPS बंद','go.go':'चलें','go.pause':'रोकें','wpm.dwell':'यहाँ रुकें','wpm.none':'कोई नहीं','wpm.minutes':'मिनट','wpm.untilGo':'GO तक','wpm.speed':'यहाँ तक गति (km/h)','wpm.remove':'हटाएँ','wpm.close':'बंद करें',
     'hud.speed':'गति','hud.heading':'दिशा','hud.progress':'प्रगति','hud.distance':'दूरी',
-    'hint.tapMap':'बिंदु A, फिर B, फिर C रखने के लिए मानचित्र पर टैप करें…',
+    'hint.tapMap':'बिंदु A, फिर B, फिर C रखने के लिए मानचित्र पर टैप करें…','search.ph':'कोई स्थान या पता खोजें…','search.searching':'खोज रहे हैं…','search.notFound':'कोई स्थान नहीं मिला।','search.error':'खोज विफल — फिर से प्रयास करें।',
     'live.seg':'सेग','live.emit':'भेजना','live.elapsed':'समय','live.noRoute':'कोई रूट नहीं',
     'field.speed':'गति','field.emitEvery':'हर बार भेजें','field.loop':'लूप',
     'loop.off':'बंद','loop.restart':'फिर से शुरू','loop.pingpong':'आगे-पीछे',
@@ -976,6 +1003,7 @@ function t(key){
 function applyI18n(){
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
   document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el=>{ el.setAttribute('placeholder', t(el.getAttribute('data-i18n-ph'))); });
   // dynamic bits that aren't plain static text nodes
   $('stateLabel').textContent = statusText();
   renderLiveCoord(S.waypoints.length ? sampleAt(S.traveled) : null);
@@ -1006,6 +1034,19 @@ const MOSCOW = [55.751244, 37.618423];
 const map = L.map('map', { zoomControl:false, attributionControl:true }).setView(MOSCOW, 12);
 map.attributionControl.setPrefix(false);          // remove the Leaflet flag prefix
 L.tileLayer(MAP_TILE_URL, Object.assign({ attribution: MAP_ATTRIBUTION }, MAP_TILE_OPTS)).addTo(map);
+
+/* remember the last map view (center + zoom), independent of the saved route */
+const MAPVIEW_KEY = 'rsMapView';
+let mapViewRestored = false, mapViewTimer = null;
+map.on('moveend', () => { clearTimeout(mapViewTimer); mapViewTimer = setTimeout(() => {
+  try{ const c = map.getCenter(); localStorage.setItem(MAPVIEW_KEY, JSON.stringify({ lat:c.lat, lng:c.lng, z:map.getZoom() })); }catch(e){}
+}, 400); });
+function restoreMapView(){
+  try{ const v = JSON.parse(localStorage.getItem(MAPVIEW_KEY)||'null');
+    if(v && isFinite(v.lat) && isFinite(v.lng)){ map.setView([v.lat, v.lng], v.z||12); return true; }
+  }catch(e){}
+  return false;
+}
 
 /* ---------- state ---------- */
 const S = {
@@ -1457,7 +1498,8 @@ function restore(){
     if(Array.isArray(d.waypoints)&&d.waypoints.length){
       S.waypoints=d.waypoints.map(p=>({lat:p.lat,lng:p.lng,dwell:p.dwell||'none',dwellMin:p.dwellMin||2,legSpeed:(p.legSpeed!=null)?p.legSpeed:null}));
       refreshMarkers(); recompute();
-      map.fitBounds(L.latLngBounds(S.waypoints.map(p=>[p.lat,p.lng])).pad(.3)); hideHint(); }
+      if(!mapViewRestored) map.fitBounds(L.latLngBounds(S.waypoints.map(p=>[p.lat,p.lng])).pad(.3));
+      hideHint(); }
   }catch(e){}
 }
 
@@ -1519,9 +1561,50 @@ $('helpClose').onclick = closeHelp;
 $('help').onclick = e => { if(e.target.id==='help') closeHelp(); };   // tap backdrop closes
 $('helpOpenSetup').onclick = () => { closeHelp(); openSetup(); };
 
+/* ---------- collapsible control deck ---------- */
+const DECK_KEY = 'rsDeckCollapsed';
+function setDeckCollapsed(collapsed, save){
+  document.body.classList.toggle('deck-collapsed', collapsed);
+  $('deckGrab').setAttribute('aria-expanded', String(!collapsed));
+  if(save!==false){ try{ localStorage.setItem(DECK_KEY, collapsed ? '1' : '0'); }catch(e){} }
+  setTimeout(()=>{ try{ map.invalidateSize(); }catch(e){} }, 300);   // give the map its reclaimed space
+}
+$('deckGrab').onclick = () => setDeckCollapsed(!document.body.classList.contains('deck-collapsed'));
+(function(){                       // vertical swipe on the handle toggles too
+  let y0 = null; const g = $('deckGrab');
+  g.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, {passive:true});
+  g.addEventListener('touchend', e => {
+    if(y0==null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null;
+    if(dy < -24) setDeckCollapsed(false); else if(dy > 24) setDeckCollapsed(true);
+  });
+})();
+
+/* ---------- place / address search (Nominatim) ---------- */
+const geocode = (function(){
+  let timer = null, inflight = false;
+  async function run(q){
+    if(!q || inflight) return;
+    inflight = true; $('searchBar').classList.add('busy'); flashHint(t('search.searching'));
+    try{
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language='
+        + encodeURIComponent(curLang||'en') + '&q=' + encodeURIComponent(q);
+      const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      const data = await res.json();
+      if(Array.isArray(data) && data.length){
+        const r = data[0]; map.setView([+r.lat, +r.lon], 13); hideHint();
+      } else flashHint(t('search.notFound'));
+    }catch(e){ flashHint(t('search.error')); }
+    finally{ inflight = false; $('searchBar').classList.remove('busy'); }
+  }
+  return q => { clearTimeout(timer); timer = setTimeout(()=>run(q.trim()), 350); };   // debounced
+})();
+$('searchBar').addEventListener('submit', e => { e.preventDefault(); geocode($('searchInput').value); $('searchInput').blur(); });
+
 /* ---------- boot ---------- */
 initLang();
+mapViewRestored = restoreMapView();   // a saved view wins over the route's fit-bounds
 restore();
+try{ setDeckCollapsed(localStorage.getItem(DECK_KEY)==='1', false); }catch(e){}
 document.body.dataset.gps='off';
 document.body.dataset.phase='standing';
 $('go').disabled=true;
