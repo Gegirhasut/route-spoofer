@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Cookies &amp; Local Storage — Route Spoofer</title>
+    <meta name="description" content="Cookie notice for the Route Spoofer website: no tracking or advertising cookies; one functional language item in localStorage.">
+    <meta name="theme-color" content="#0d1320">
+    <meta property="og:title" content="Cookies &amp; Local Storage — Route Spoofer">
+    <meta property="og:description" content="Cookie notice for the Route Spoofer website: no tracking or advertising cookies; one functional language item in localStorage.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="images/hero.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    
+    <script>
+        (function () {
+            try {
+                var l = localStorage.getItem('route-spoofer.lang');
+                if (l) document.documentElement.lang = l;
+            } catch (e) {}
+        })();
+    </script>
+
+    
+    <link rel="stylesheet" href="css/app.css">
+    <script src="js/i18n.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="index.html" aria-label="Route Spoofer">
+            <img class="brand-logo" src="logo.png" alt="Route Spoofer logo" width="36" height="36">
+            <span class="brand-name">Route Spoofer</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Sections">
+            <a href="index.html#features" data-i18n="nav.features">Features</a>
+            <a href="index.html#maps" data-i18n="nav.maps">Map apps</a>
+            <a href="index.html#how" data-i18n="nav.how">How it works</a>
+            <a href="index.html#setup" data-i18n="nav.setup">How to use</a>
+        </nav>
+
+        <div class="lang" id="lang">
+            <button type="button" class="lang-trigger" id="langTrigger"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-label="Language" data-i18n-aria="lang_label">
+                <svg class="lang-globe" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"
+                     fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M3 12h18"/>
+                    <path d="M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z"/>
+                </svg>
+                <span class="lang-current" id="langCurrent">English</span>
+                <svg class="lang-caret" viewBox="0 0 12 8" width="11" height="8" aria-hidden="true">
+                    <path fill="currentColor" d="M1 1.2 6 6l5-4.8"/>
+                </svg>
+            </button>
+            <ul class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="en">English</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="ru">Русский</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="de">Deutsch</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="es">Español</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="pt">Português</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="fr">Français</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="zh">中文</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="hi">हिन्दी</li>
+                            </ul>
+        </div>
+    </div>
+</header>
+
+<main class="legal">
+    <div class="container narrow">
+        <h1 class="section-title" data-i18n="cookies.heading">Cookies &amp; Local Storage</h1>
+
+                    <p class="lead" data-i18n="cookies.body.0">This website uses no tracking, analytics, or advertising cookies, and no third-party cookies.</p>
+                    <p class="lead" data-i18n="cookies.body.1">This site sets no cookies at all.</p>
+                    <p class="lead" data-i18n="cookies.body.2">It keeps one functional item in your browser&#039;s localStorage — your selected language (&quot;route-spoofer.lang&quot;) — so your preferred language is shown on return. It stays on your device, is not sent to us, and you can clear it anytime in your browser settings.</p>
+                    <p class="lead" data-i18n="cookies.body.3">The host keeps standard server logs as described in the Privacy Policy. Because no tracking technologies are used, there is no consent banner.</p>
+        
+        <p class="legal-meta">
+            <span data-i18n="cookies.updated_label">Last updated:</span>
+            <span>2026-06-25</span>
+        </p>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <img class="brand-logo" src="logo.png" alt="" width="32" height="32">
+            <div>
+                <strong>Route Spoofer</strong>
+                <p data-i18n="footer.tagline">Android mock-GPS route player for testing location-based apps.</p>
+            </div>
+        </div>
+        <div class="footer-links">
+            <a href="privacy.html" data-i18n="footer.privacy">Privacy</a>
+            <a href="cookies.html" data-i18n="footer.cookies">Cookies</a>
+            <a href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank" data-i18n="footer.github">View on GitHub</a>
+            <span data-i18n="footer.license">MIT License</span>
+            <span>© 2026 Maxim Popelnitskiy</span>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

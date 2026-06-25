@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Privacy Policy — Route Spoofer</title>
+    <meta name="description" content="Privacy policy for the Route Spoofer Android app and website: no accounts, no analytics, no personal data collected.">
+    <meta name="theme-color" content="#0d1320">
+    <meta property="og:title" content="Privacy Policy — Route Spoofer">
+    <meta property="og:description" content="Privacy policy for the Route Spoofer Android app and website: no accounts, no analytics, no personal data collected.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="images/hero.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    
+    <script>
+        (function () {
+            try {
+                var l = localStorage.getItem('route-spoofer.lang');
+                if (l) document.documentElement.lang = l;
+            } catch (e) {}
+        })();
+    </script>
+
+    
+    <link rel="stylesheet" href="css/app.css">
+    <script src="js/i18n.js" defer></script>
+</head>
+<body>
+
+<header class="site-header">
+    <div class="container header-inner">
+        <a class="brand" href="index.html" aria-label="Route Spoofer">
+            <img class="brand-logo" src="logo.png" alt="Route Spoofer logo" width="36" height="36">
+            <span class="brand-name">Route Spoofer</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Sections">
+            <a href="index.html#features" data-i18n="nav.features">Features</a>
+            <a href="index.html#maps" data-i18n="nav.maps">Map apps</a>
+            <a href="index.html#how" data-i18n="nav.how">How it works</a>
+            <a href="index.html#setup" data-i18n="nav.setup">How to use</a>
+        </nav>
+
+        <div class="lang" id="lang">
+            <button type="button" class="lang-trigger" id="langTrigger"
+                    aria-haspopup="listbox" aria-expanded="false"
+                    aria-label="Language" data-i18n-aria="lang_label">
+                <svg class="lang-globe" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"
+                     fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M3 12h18"/>
+                    <path d="M12 3c2.6 2.4 4 5.6 4 9s-1.4 6.6-4 9c-2.6-2.4-4-5.6-4-9s1.4-6.6 4-9z"/>
+                </svg>
+                <span class="lang-current" id="langCurrent">English</span>
+                <svg class="lang-caret" viewBox="0 0 12 8" width="11" height="8" aria-hidden="true">
+                    <path fill="currentColor" d="M1 1.2 6 6l5-4.8"/>
+                </svg>
+            </button>
+            <ul class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="en">English</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="ru">Русский</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="de">Deutsch</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="es">Español</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="pt">Português</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="fr">Français</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="zh">中文</li>
+                                    <li class="lang-option" role="option" tabindex="-1" data-lang="hi">हिन्दी</li>
+                            </ul>
+        </div>
+    </div>
+</header>
+
+<main class="legal">
+    <div class="container narrow">
+        <h1 class="section-title" data-i18n="privacy.heading">Privacy Policy</h1>
+        <p class="lead" data-i18n="privacy.intro">Route Spoofer is an open-source (MIT) Android app for developers and QA to play a scripted GPS route while testing location-based apps. This policy covers the app and this website.</p>
+
+        <h2 class="sub" data-i18n="privacy.app_heading">The app</h2>
+        <ul class="legal-list">
+                            <li data-i18n="privacy.app.0">No account, no sign-up.</li>
+                            <li data-i18n="privacy.app.1">Collects no personal data and sends nothing to any server. No analytics, no advertising, no third-party tracking SDKs.</li>
+                            <li data-i18n="privacy.app.2">The Location permission is used only on your device to emit a mock GPS location; your location is never stored remotely or transmitted.</li>
+                            <li data-i18n="privacy.app.3">The Notifications permission is used only to show the foreground-service status notification.</li>
+                            <li data-i18n="privacy.app.4">The route you draw is stored locally on your device; clear app data or uninstall to remove it.</li>
+                    </ul>
+
+        <h2 class="sub" data-i18n="privacy.web_heading">This website</h2>
+        <ul class="legal-list">
+                            <li data-i18n="privacy.web.0">A static informational site. No sign-up, no contact forms, no personal data collected.</li>
+                            <li data-i18n="privacy.web.1">Your language choice is kept in your browser&#039;s localStorage so the site remembers it; it stays on your device and is never sent to us.</li>
+                            <li data-i18n="privacy.web.2">The hosting provider keeps standard server request logs (IP address, user agent, timestamp) for security and operation. This site is hosted by GitHub, Inc.</li>
+                    </ul>
+
+        <p class="lead" data-i18n="privacy.closing">We do not sell or share data. As we collect no personal data, there is nothing on our side to access, correct, or delete; on-device data is fully under your control.</p>
+
+        <p class="legal-meta">
+            <span data-i18n="privacy.contact_label">Contact:</span>
+            <a href="https://github.com/Gegirhasut/route-spoofer/issues" rel="noopener" target="_blank"
+               data-i18n="privacy.contact_link">GitHub issues</a>
+        </p>
+        <p class="legal-meta">
+            <span data-i18n="privacy.updated_label">Last updated:</span>
+            <span>2026-06-25</span>
+        </p>
+    </div>
+</main>
+
+<footer class="site-footer">
+    <div class="container footer-inner">
+        <div class="footer-brand">
+            <img class="brand-logo" src="logo.png" alt="" width="32" height="32">
+            <div>
+                <strong>Route Spoofer</strong>
+                <p data-i18n="footer.tagline">Android mock-GPS route player for testing location-based apps.</p>
+            </div>
+        </div>
+        <div class="footer-links">
+            <a href="privacy.html" data-i18n="footer.privacy">Privacy</a>
+            <a href="cookies.html" data-i18n="footer.cookies">Cookies</a>
+            <a href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank" data-i18n="footer.github">View on GitHub</a>
+            <span data-i18n="footer.license">MIT License</span>
+            <span>© 2026 Maxim Popelnitskiy</span>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
