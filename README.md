@@ -12,6 +12,15 @@ location-based apps and reproducing routes without physically moving.
 
 Android only: iOS has no public mock-location API.
 
+## Screenshots
+
+| | | |
+|:---:|:---:|:---:|
+| ![Main screen, empty](docs/screenshots/main-empty.jpg) | ![A route on the map](docs/screenshots/route.jpg) | ![Driving with live speed](docs/screenshots/driving.jpg) |
+| Empty start — tap the map | A route drawn (A → B → C) | Driving with live speed |
+| ![Place search](docs/screenshots/search-newyork.jpg) | ![Waiting at a point](docs/screenshots/waiting.jpg) | ![Saved routes](docs/screenshots/saved-routes.jpg) |
+| Jump anywhere by place search | Waiting at a point (dwell) | Saved routes — import / export |
+
 ## Features
 
 - **Broadcasting is separate from movement.** A **GPS toggle** turns location
@@ -56,9 +65,15 @@ app** in Android Developer options (see Phone setup).
    tapped seven times.
 2. Allow installs from unknown sources and sideload the APK.
 3. **Developer options → Select mock location app → Route Spoofer.**
-4. Launch the app, grant **Location** and **Notifications**, and wait for the
-   readiness card.
+4. Launch the app, grant the **Location** permission and **Notifications**, and
+   wait for the readiness card.
 5. Turn **GPS** on to start broadcasting; press **GO** to drive.
+
+<p>
+  <img src="docs/screenshots/setup-developer-options.jpg" width="240" alt="Android Developer options with Route Spoofer set as the mock location app">
+  &nbsp;
+  <img src="docs/screenshots/setup-select-mock-app.jpg" width="240" alt="Selecting Route Spoofer in the Select mock location app list">
+</p>
 
 ## Build
 
