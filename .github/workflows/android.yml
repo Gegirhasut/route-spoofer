@@ -28,13 +28,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # ---- Quality gate: lint + static analysis + unit tests run BEFORE the
+      # build. If any check fails the job stops here, so no APK is uploaded and
+      # no "latest" release is published.
+
+      - name: Lint web UI (ESLint)
+        run: npm run lint
+
       - name: Sync Capacitor (Android)
         run: npx cap sync android
+
+      - name: Kotlin format, static analysis & unit tests
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew ktlintCheck detekt test --stacktrace
 
       - name: Build debug APK
         run: |
           cd android
-          chmod +x ./gradlew
           ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK artifact
