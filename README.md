@@ -6,10 +6,10 @@
 🌐 **Landing page:** <https://gegirhasut.github.io/route-spoofer/>
 &nbsp;·&nbsp; 📥 **Download (latest):** <https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk>
 
-A standalone **Android** mock-GPS tool. It feeds a scripted, moving location to
-the **whole device**, so any other app — maps, navigation, driver, delivery or
-dispatch apps — reads the fake position as real. Useful for testing
-location-based apps and reproducing routes without physically moving.
+**Android mock-GPS route player for testing location-based apps — broadcasts a
+scripted, moving location to your whole device.** Any other app — maps,
+navigation, driver, delivery or dispatch — reads the simulated position as real,
+so you can test routes and reproduce trips without physically moving.
 
 Android only: iOS has no public mock-location API.
 
@@ -42,6 +42,11 @@ Android only: iOS has no public mock-location API.
   restart / ping-pong.
 - **Speed:** a live global speed slider (changeable mid-drive) plus optional
   per-leg speed overrides.
+- **Saved routes.** Save the whole scene as a named route, then load, rename or
+  delete it — all on-device. Select several to export one JSON file (or share it
+  from Android); import merges them back.
+- **Place search.** Search any place or address to recenter the map anywhere on
+  the globe; the app also remembers your last map view between launches.
 - **Live status label:** _Standing_ / _Driving_ / _Waiting m:ss at a point_ /
   _Waiting for GO_ / _Arrived_.
 - **In-app Help (“?”)** with a full legend, and an **8-language UI** (EN, RU, DE,
