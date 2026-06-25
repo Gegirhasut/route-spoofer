@@ -74,7 +74,6 @@ data class DriveState(
     val progress: Double,
     val holdRemainingMs: Long,
     val holdWaypoint: Int,
-    val lockedThrough: Int,
 )
 
 /**
@@ -157,7 +156,6 @@ class RouteEngine(initial: List<Waypoint> = emptyList()) {
             progress = if (totalDistance > 0.0) (traveled / totalDistance).coerceIn(0.0, 1.0) else 0.0,
             holdRemainingMs = if (phase == Phase.WAITING_TIMED) holdRemainingMs else 0L,
             holdWaypoint = holdWaypoint,
-            lockedThrough = lockedThrough(),
         )
     }
 
@@ -198,7 +196,7 @@ class RouteEngine(initial: List<Waypoint> = emptyList()) {
         holdWaypoint = -1
     }
 
-    // ------------------------------------------------------------ editing (tail only)
+    // ------------------------------------------------------------ editing (any waypoint, anytime)
 
     /** Append a waypoint to the end. Never shifts the travelled arc. */
     fun appendWaypoint(wp: Waypoint) {
@@ -208,59 +206,98 @@ class RouteEngine(initial: List<Waypoint> = emptyList()) {
 
     fun appendPoint(p: LatLng) = appendWaypoint(Waypoint(p))
 
-    /** Move a future waypoint. Returns false if [i] is locked or invalid. */
+    /**
+     * Move any waypoint. Geometry behind the cursor may change, so the driver's
+     * current WORLD position is preserved and the travelled distance re-anchored
+     * onto the new route — the cursor never teleports. Editing the point being
+     * driven to re-targets smoothly from the current position.
+     */
     fun moveWaypoint(
         i: Int,
         p: LatLng,
     ): Boolean {
-        if (!editable(i)) return false
+        if (i !in wps.indices) return false
+        val here = worldPos()
         wps[i] = wps[i].copy(pos = p)
         recompute()
+        reanchorTo(here)
         return true
     }
 
-    /** Remove a future waypoint. Returns false if [i] is locked or invalid. */
+    /** Remove any waypoint, preserving the driver's current world position. */
     fun removeWaypoint(i: Int): Boolean {
-        if (!editable(i)) return false
+        if (i !in wps.indices) return false
+        val here = worldPos()
         wps.removeAt(i)
+        if (i <= holdWaypoint) holdWaypoint = (holdWaypoint - 1).coerceAtLeast(-1)
         recompute()
+        if (wps.size >= 2) {
+            reanchorTo(here)
+        } else {
+            traveled = 0.0
+            if (phase == Phase.DRIVING) phase = Phase.STANDING
+        }
         return true
     }
 
-    /** Set the dwell of a future waypoint. Returns false if [i] is locked. */
+    /** Set the dwell of any waypoint. If behind the cursor it applies on the next pass. */
     fun setWaypointDwell(
         i: Int,
         dwell: DwellKind,
         dwellMs: Long,
     ): Boolean {
-        if (!editable(i)) return false
+        if (i !in wps.indices) return false
         wps[i] = wps[i].copy(dwell = dwell, dwellMs = dwellMs)
         return true
     }
 
-    /** Set the speed override for the leg ending at a future waypoint. */
+    /** Set the speed override for the leg ending at any waypoint. */
     fun setLegSpeed(
         i: Int,
         speedKmh: Double?,
     ): Boolean {
-        if (!editable(i)) return false
+        if (i !in wps.indices) return false
         wps[i] = wps[i].copy(legSpeedKmh = speedKmh)
         return true
     }
 
-    /** The highest waypoint index that is immutable (passed or the active target). */
-    fun lockedThrough(): Int {
-        if (wps.isEmpty()) return -1
-        val seg = currentSeg()
-        val at = cursorWaypoint()
-        return when {
-            phase == Phase.DRIVING -> minOf(seg + 1, wps.size - 1)
-            at >= 0 -> at
-            else -> minOf(seg + 1, wps.size - 1)
-        }
+    /** The driver's current world position. */
+    private fun worldPos(): LatLng {
+        val f = sampleAt(traveled)
+        return LatLng(f.lat, f.lng)
     }
 
-    private fun editable(i: Int): Boolean = i in wps.indices && i > lockedThrough()
+    /**
+     * Re-anchor [traveled] to the arc length of the point on the (possibly
+     * changed) route nearest to [p], keeping the world position continuous when
+     * geometry is edited. For edits behind the cursor the nearest point is exactly
+     * the current position (its segment endpoints are unchanged), so there is no
+     * shift; editing the active target snaps to the nearest point on the new leg.
+     */
+    private fun reanchorTo(p: LatLng) {
+        if (wps.size < 2) {
+            traveled = 0.0
+            return
+        }
+        var bestDist2 = Double.MAX_VALUE
+        var bestArc = 0.0
+        for (i in 0 until wps.size - 1) {
+            val a = wps[i].pos
+            val b = wps[i + 1].pos
+            val abLat = b.lat - a.lat
+            val abLng = b.lng - a.lng
+            val len2 = abLat * abLat + abLng * abLng
+            val t = if (len2 == 0.0) 0.0 else (((p.lat - a.lat) * abLat + (p.lng - a.lng) * abLng) / len2).coerceIn(0.0, 1.0)
+            val dLat = p.lat - (a.lat + abLat * t)
+            val dLng = p.lng - (a.lng + abLng * t)
+            val d2 = dLat * dLat + dLng * dLng
+            if (d2 < bestDist2) {
+                bestDist2 = d2
+                bestArc = cum[i] + t * (cum[i + 1] - cum[i])
+            }
+        }
+        traveled = bestArc.coerceIn(0.0, totalDistance)
+    }
 
     // ------------------------------------------------------------ driving internals
 

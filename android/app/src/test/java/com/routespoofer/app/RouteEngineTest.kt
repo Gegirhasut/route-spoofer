@@ -1,7 +1,6 @@
 package com.routespoofer.app
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -256,26 +255,82 @@ class RouteEngineTest {
         assertTrue(e.totalDistance > totalBefore) // route got longer
     }
 
-    @Test fun lockInvariant_passedAndCurrentTargetAreImmutable() {
-        val e =
-            RouteEngine(
-                (0..3).map { Waypoint(pt(0.0, it.toDouble())) }, // 0,1,2,3
-            )
+    // No lock: every waypoint is editable at any time…
+    @Test fun anyWaypointEditableAnytime() {
+        val e = line4()
         e.go()
-        e.step(1000L, fast) // driving leg 0 -> 1; locked through index 1
-        assertEquals(1, e.lockedThrough())
-        assertFalse("passed start is locked", e.moveWaypoint(0, pt(9.0, 9.0)))
-        assertFalse("current target is locked", e.moveWaypoint(1, pt(9.0, 9.0)))
-        assertFalse("cannot remove the target", e.removeWaypoint(1))
-        assertTrue("future waypoint is editable", e.moveWaypoint(2, pt(0.5, 2.0)))
-        assertTrue("future dwell is editable", e.setWaypointDwell(3, DwellKind.TIMED, 1000L))
-        assertTrue("future leg speed is editable", e.setLegSpeed(3, 50.0))
+        e.step(150_000L, fast) // driving leg 1 (heading to index 2)
+        assertTrue("passed point movable", e.moveWaypoint(0, pt(9.0, 9.0)))
+        assertTrue("passed point dwell editable", e.setWaypointDwell(1, DwellKind.TIMED, 1000L))
+        assertTrue("current target leg speed editable", e.setLegSpeed(2, 50.0))
+        assertTrue("future point movable", e.moveWaypoint(3, pt(0.0, 4.0)))
     }
 
-    @Test fun standingAtStart_nextWaypointStillEditable() {
-        val e = RouteEngine.of(pt(0.0, 0.0), pt(0.0, 1.0), pt(0.0, 2.0))
-        // not driving yet: only the start (index 0) is locked
-        assertEquals(0, e.lockedThrough())
-        assertTrue(e.moveWaypoint(1, pt(0.0, 0.5)))
+    // …but editing geometry behind/at the cursor must NOT teleport the driver.
+
+    private fun line4() =
+        RouteEngine(
+            listOf(Waypoint(pt(0.0, 0.0)), Waypoint(pt(0.0, 1.0)), Waypoint(pt(0.0, 2.0)), Waypoint(pt(0.0, 3.0))),
+        )
+
+    @Test fun editPassedWaypoint_keepsCurrentWorldPosition() {
+        val e = line4()
+        e.go()
+        e.step(250_000L, fast) // cursor on leg 2 (past index 2)
+        val before = e.state(fast)
+        e.moveWaypoint(0, pt(5.0, 5.0)) // move a passed point far away
+        val after = e.state(fast)
+        assertEquals(before.lat, after.lat, eps)
+        assertEquals(before.lng, after.lng, eps)
+        assertEquals(Phase.DRIVING, after.phase)
+    }
+
+    @Test fun removePassedWaypoint_keepsCurrentWorldPosition() {
+        val e = line4()
+        e.go()
+        e.step(250_000L, fast)
+        val before = e.state(fast)
+        assertTrue(e.removeWaypoint(0))
+        val after = e.state(fast)
+        assertEquals(before.lat, after.lat, eps)
+        assertEquals(before.lng, after.lng, eps)
+        assertEquals(Phase.DRIVING, after.phase)
+    }
+
+    @Test fun removeCurrentTarget_reTargetsWithoutTeleport() {
+        val e = line4()
+        e.go()
+        e.step(150_000L, fast) // on leg 1, heading to index 2
+        val before = e.state(fast)
+        assertTrue(e.removeWaypoint(2)) // remove the point being driven to (collinear route)
+        val after = e.state(fast)
+        assertEquals(before.lat, after.lat, eps)
+        assertEquals(before.lng, after.lng, eps)
+        assertEquals(Phase.DRIVING, after.phase)
+    }
+
+    @Test fun editPassedDwellAndSpeed_keepsPosition() {
+        val e = line4()
+        e.go()
+        e.step(150_000L, fast)
+        val before = e.state(fast)
+        e.setWaypointDwell(0, DwellKind.TIMED, 60_000L) // dwell on a passed point — no recompute
+        e.setLegSpeed(0, 30.0)
+        val after = e.state(fast)
+        assertEquals(before.lat, after.lat, eps)
+        assertEquals(before.lng, after.lng, eps)
+        assertEquals(Phase.DRIVING, after.phase)
+    }
+
+    @Test fun dwellAddedToPassedPoint_appliesOnNextPass_pingpong() {
+        val e = RouteEngine(listOf(Waypoint(pt(0.0, 0.0)), Waypoint(pt(0.0, 1.0)), Waypoint(pt(0.0, 2.0))))
+        e.loop = LoopMode.PINGPONG
+        e.go()
+        e.step(300_000L, fast) // reach the end -> reverse (ping-pong)
+        e.setWaypointDwell(1, DwellKind.UNTIL_GO, 0L) // add a dwell to the now-passed middle point
+        e.step(300_000L, fast) // reverse to the start, then turn forward
+        val s = e.step(300_000L, fast) // forward again -> should now stop at B
+        assertEquals(Phase.WAITING_GO, s.phase)
+        assertEquals(1, s.holdWaypoint)
     }
 }

@@ -198,7 +198,6 @@ class MockLocationService : Service() {
             put("phase", st.phase.name.lowercase())
             put("holdRemainingMs", st.holdRemainingMs)
             put("holdWaypoint", st.holdWaypoint)
-            put("lockedThrough", st.lockedThrough)
             put("elapsedMs", elapsedMs)
             put("gpsOn", gpsOn)
             put("driving", st.phase == Phase.DRIVING)

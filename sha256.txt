@@ -1,0 +1,2 @@
+ Generated locally with keytool (RSA 2048, 10000-day validity). This is your upload key for Play App Signing (Google holds the real app-signing key). SHA-256:
+  00:F5:1C:B8:B6:F5:46:A4:0C:C7:DA:12:46:80:FA:1F:26:46:99:71:06:C3:26:32:A4:EE:E7:E4:80:C6:2B:38.
