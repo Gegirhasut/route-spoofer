@@ -344,7 +344,7 @@
     transform-origin:50% 100%; margin:-13px 0 0 -5px;}
 
   .hint{
-    position:absolute; z-index:550; left:50%; top:calc(env(safe-area-inset-top) + 102px); transform:translateX(-50%);
+    position:absolute; z-index:590; left:50%; top:calc(env(safe-area-inset-top) + 102px); transform:translateX(-50%);
     background:var(--panel); border:1px solid var(--line-2); color:var(--muted);
     font:500 12px/1 var(--sans); padding:9px 14px; border-radius:99px; pointer-events:none;
     box-shadow:0 6px 20px rgba(0,0,0,.4); white-space:nowrap; transition:opacity .3s; max-width:calc(100% - 24px);
@@ -1414,7 +1414,7 @@ function hardReset(){      // the route was emptied
   document.getElementById('stateLabel').textContent=statusText();
   document.getElementById('railFill').style.width='0%';
   document.getElementById('liveElapsed').textContent='00:00';
-  renderLiveCoord(sampleAt(0)); syncTools();
+  renderLiveCoord(sampleAt(0)); syncTools(); refreshHint();
 }
 
 /* a fix streamed back from the native clock (single source of truth on native) */
@@ -1506,7 +1506,7 @@ $('loopSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
 
 // Route-building tools work while NOT broadcasting (live tail edits use tap / the waypoint menu).
 $('undo').onclick=()=>{ if(S.gpsOn||!S.waypoints.length)return; S.waypoints.pop(); refreshMarkers(); recompute(); persist(); };
-$('clear').onclick=()=>{ if(S.gpsOn)return; S.waypoints=[]; refreshMarkers(); recompute(); hardReset(); showHint(); persist(); };
+$('clear').onclick=()=>{ if(S.gpsOn)return; S.waypoints=[]; refreshMarkers(); recompute(); hardReset(); persist(); };
 $('reverse').onclick=()=>{ if(S.gpsOn||S.waypoints.length<2)return; S.waypoints.reverse(); refreshMarkers(); recompute(); persist(); };
 
 $('locate').onclick=async ()=>{
@@ -1563,9 +1563,11 @@ $('wpmRemove').onclick=()=>{ const i=wpMenuIdx; closeWpMenu(); if(i>=0) removeWa
 
 /* ---------- hint ---------- */
 let hintTimer;
-function flashHint(msg){ const h=$('hint'); h.textContent=msg; h.style.opacity='1'; clearTimeout(hintTimer); hintTimer=setTimeout(hideHint,2200); }
+function flashHint(msg){ const h=$('hint'); h.textContent=msg; h.style.opacity='1'; clearTimeout(hintTimer); hintTimer=setTimeout(refreshHint,2200); }
 function showHint(){ const h=$('hint'); h.textContent=t('hint.tapMap'); h.style.opacity='1'; }
-function hideHint(){ $('hint').style.opacity='0'; }
+function hideHint(){ clearTimeout(hintTimer); $('hint').style.opacity='0'; }
+// the empty-state "tap the map" hint is driven purely by state: shown whenever the route is empty
+function refreshHint(){ if(S.waypoints.length===0) showHint(); else hideHint(); }
 
 /* ---------- persistence ---------- */
 function persist(){ try{ localStorage.setItem('routeSpoofer', JSON.stringify({
@@ -1836,7 +1838,7 @@ $('go').disabled=true;
 applyI18n();                 // localize the static UI before first paint
 renderLiveCoord(sampleAt(0));
 paintHud();
-if(!S.waypoints.length) showHint();
+map.whenReady(refreshHint);   // show the empty-state hint once the map is ready (survives a cold start)
 
 if(isNative && FakeGps){
   // single source of truth: native clock streams fixes back to the UI
