@@ -195,6 +195,32 @@ h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
 .hero-tagline { font-size: 1.18rem; color: var(--muted); max-width: 33ch; margin: 0 0 28px; }
 
 .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+
+/* ---- QAProvider attribution ---------------------------------------------- */
+.qa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 7px 14px;
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+}
+.qa-badge:hover { border-color: var(--blue); text-decoration: none; }
+.qa-badge .qa-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--blue);
+    flex: 0 0 auto;
+}
+.footer-qa { color: var(--muted); }
+.footer-qa:hover { color: var(--text); }
+
 .btn {
     display: inline-flex;
     align-items: center;
@@ -390,6 +416,17 @@ h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .5em; }
 .footer-brand strong { color: #fff; }
 .footer-brand p { margin: 2px 0 0; color: var(--muted); font-size: .9rem; }
 .footer-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: .92rem; }
+.footer-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    align-items: center;
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: .9rem;
+}
 
 /* ---- responsive ----------------------------------------------------------- */
 @media (max-width: 920px) {
