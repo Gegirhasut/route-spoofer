@@ -123,7 +123,7 @@ class MockLocationService : Service() {
     elapsedMs = 0
     playing = true
 
-    startInForeground()
+    startInForeground()      // notification text: notif_driving
     setupProviders()
 
     lastTick = SystemClock.elapsedRealtime()
@@ -138,14 +138,14 @@ class MockLocationService : Service() {
     playing = false
     handler.removeCallbacks(tickRunnable)
     emitFix(sampleAt(traveled), false)
-    updateNotification("Paused")
+    updateNotification(R.string.notif_paused)
   }
 
   private fun handleResume() {
     if (playing || waypoints.isEmpty()) return
     playing = true
     lastTick = SystemClock.elapsedRealtime()
-    updateNotification("Driving")
+    updateNotification(R.string.notif_driving)
     handler.removeCallbacks(tickRunnable)
     handler.post(tickRunnable)
   }
@@ -205,7 +205,7 @@ class MockLocationService : Service() {
     emitFix(fix, false)
     playing = false
     handler.removeCallbacks(tickRunnable)
-    updateNotification("Route complete")
+    updateNotification(R.string.notif_complete)
   }
 
   // ---------------------------------------------------------------- geo math
@@ -343,7 +343,7 @@ class MockLocationService : Service() {
   // ---------------------------------------------------------------- foreground
 
   private fun startInForeground() {
-    val notif = buildNotification("Driving")
+    val notif = buildNotification(R.string.notif_driving)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
       ServiceCompat.startForeground(
         this, NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
@@ -353,15 +353,16 @@ class MockLocationService : Service() {
     }
   }
 
-  private fun buildNotification(state: String): Notification {
+  /** [textRes] is a localized status string (notif_driving / notif_paused / notif_complete). */
+  private fun buildNotification(textRes: Int): Notification {
     val launch = packageManager.getLaunchIntentForPackage(packageName)
     val pi = PendingIntent.getActivity(
       this, 0, launch,
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     return NotificationCompat.Builder(this, CHANNEL_ID)
-      .setContentTitle("Route Spoofer")
-      .setContentText("Mock GPS active — $state")
+      .setContentTitle(getString(R.string.app_name))   // "Route Spoofer" — brand, not localized
+      .setContentText(getString(textRes))
       .setSmallIcon(android.R.drawable.ic_menu_mylocation)
       .setOngoing(true)
       .setContentIntent(pi)
@@ -369,16 +370,16 @@ class MockLocationService : Service() {
       .build()
   }
 
-  private fun updateNotification(state: String) {
+  private fun updateNotification(textRes: Int) {
     val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    nm.notify(NOTIF_ID, buildNotification(state))
+    nm.notify(NOTIF_ID, buildNotification(textRes))
   }
 
   private fun createChannel() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val ch = NotificationChannel(
-        CHANNEL_ID, "Route Spoofer", NotificationManager.IMPORTANCE_LOW
-      ).apply { description = "Mock GPS playback status" }
+        CHANNEL_ID, getString(R.string.app_name), NotificationManager.IMPORTANCE_LOW
+      ).apply { description = getString(R.string.notif_channel_desc) }
       val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
       nm.createNotificationChannel(ch)
     }

@@ -202,8 +202,8 @@ class FakeGpsPlugin : Plugin() {
     val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val ch = NotificationChannel(
-        DEV_CHANNEL_ID, "Setup guidance", NotificationManager.IMPORTANCE_LOW
-      ).apply { description = "Reminds you to enable Developer options for mock GPS" }
+        DEV_CHANNEL_ID, context.getString(R.string.devnotif_channel), NotificationManager.IMPORTANCE_LOW
+      ).apply { description = context.getString(R.string.devnotif_channel_desc) }
       nm.createNotificationChannel(ch)
     }
     val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
@@ -212,8 +212,8 @@ class FakeGpsPlugin : Plugin() {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     val notif = NotificationCompat.Builder(context, DEV_CHANNEL_ID)
-      .setContentTitle("Enable Developer options to use Route Spoofer")
-      .setContentText("Mock GPS needs Android Developer options on. Tap to see how.")
+      .setContentTitle(context.getString(R.string.devnotif_title))
+      .setContentText(context.getString(R.string.devnotif_text))
       .setSmallIcon(android.R.drawable.ic_menu_mylocation)
       .setPriority(NotificationCompat.PRIORITY_LOW)
       .setOngoing(false)

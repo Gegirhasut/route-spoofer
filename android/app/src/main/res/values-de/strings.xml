@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">Mock-GPS aktiv – Fahrt</string>
+    <string name="notif_paused">Mock-GPS aktiv – pausiert</string>
+    <string name="notif_complete">Mock-GPS aktiv – Route abgeschlossen</string>
+    <string name="notif_channel_desc">Status der Mock-GPS-Wiedergabe</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Entwickleroptionen für Route Spoofer aktivieren</string>
+    <string name="devnotif_text">Mock-GPS benötigt aktivierte Android-Entwickleroptionen. Tippe, um zu sehen wie.</string>
+    <string name="devnotif_channel">Einrichtungshinweise</string>
+    <string name="devnotif_channel_desc">Erinnert daran, die Entwickleroptionen für Mock-GPS zu aktivieren</string>
+</resources>

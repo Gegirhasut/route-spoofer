@@ -4,4 +4,16 @@
     <string name="title_activity_main">Route Spoofer</string>
     <string name="package_name">com.routespoofer.app</string>
     <string name="custom_url_scheme">com.routespoofer.app</string>
+
+    <!-- Foreground-service notification (follows the system language) -->
+    <string name="notif_driving">Mock GPS active — Driving</string>
+    <string name="notif_paused">Mock GPS active — Paused</string>
+    <string name="notif_complete">Mock GPS active — Route complete</string>
+    <string name="notif_channel_desc">Mock GPS playback status</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Enable Developer options to use Route Spoofer</string>
+    <string name="devnotif_text">Mock GPS needs Android Developer options on. Tap to see how.</string>
+    <string name="devnotif_channel">Setup guidance</string>
+    <string name="devnotif_channel_desc">Reminds you to enable Developer options for mock GPS</string>
 </resources>

@@ -158,7 +158,27 @@
   .logline:first-child{color:var(--ok)}
   .logline .t{color:var(--signal)}
 
-  /* about / author credit */
+  /* about / language + GitHub / author credit */
+  .about{display:flex; gap:8px; align-items:center; justify-content:center; flex-wrap:wrap; padding-top:2px}
+  .lang-pick{
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:9px; padding:6px 9px; color:var(--muted);
+  }
+  .lang-pick svg{width:13px;height:13px;fill:currentColor;opacity:.85}
+  .lang-pick select{
+    background:transparent; border:0; color:var(--text); font:600 11px/1 var(--sans);
+    outline:none; cursor:pointer; -webkit-appearance:none; appearance:none; padding:0 2px;
+  }
+  .lang-pick select option{background:var(--panel-2); color:var(--text)}
+  .ghlink{
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:9px; padding:7px 11px;
+    color:var(--text); font:600 11px/1 var(--sans); transition:.12s;
+  }
+  .ghlink:hover{border-color:var(--line-2)}
+  .ghlink:active{transform:scale(.97)}
+  .ghlink svg{width:14px;height:14px;fill:currentColor;opacity:.9}
+
   .credit{
     text-align:center; font:500 10px/1.4 var(--sans); letter-spacing:.04em;
     color:var(--muted); opacity:.7; padding-top:2px;
@@ -250,10 +270,10 @@
   <div id="hud">
     <span class="state-pill"><i class="dot"></i><span id="stateLabel">Ready</span></span>
     <div class="chips">
-      <div class="chip"><b>Speed</b><span id="cSpd">0.0</span></div>
-      <div class="chip"><b>Heading</b><span id="cHdg">—</span></div>
-      <div class="chip"><b>Progress</b><span id="cPrg">0%</span></div>
-      <div class="chip"><b>Distance</b><span id="cDst">0.00 km</span></div>
+      <div class="chip"><b data-i18n="hud.speed">Speed</b><span id="cSpd">0.0</span></div>
+      <div class="chip"><b data-i18n="hud.heading">Heading</b><span id="cHdg">—</span></div>
+      <div class="chip"><b data-i18n="hud.progress">Progress</b><span id="cPrg">0%</span></div>
+      <div class="chip"><b data-i18n="hud.distance">Distance</b><span id="cDst">0.00 km</span></div>
     </div>
   </div>
 
@@ -263,18 +283,18 @@
     <div class="deck-handle"></div>
 
     <div class="transport">
-      <button class="gps-btn" id="play" title="Play / pause">
+      <button class="gps-btn" id="play" data-i18n-title="title.play" title="Play / pause">
         <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       </button>
       <div class="live-read">
         <div class="coord" id="liveCoord"><span class="mut">lat</span> 55.751244 &nbsp;<span class="mut">lng</span> 37.618423</div>
         <div class="sub">
-          <span>seg <em id="liveSeg">0/0</em></span>
-          <span>emit <em id="liveRate">1.0s</em></span>
-          <span>elapsed <em id="liveElapsed">00:00</em></span>
+          <span><span data-i18n="live.seg">seg</span> <em id="liveSeg">0/0</em></span>
+          <span><span data-i18n="live.emit">emit</span> <em id="liveRate">1.0s</em></span>
+          <span><span data-i18n="live.elapsed">elapsed</span> <em id="liveElapsed">00:00</em></span>
         </div>
       </div>
-      <button class="stopbtn" id="stop" title="Stop & reset to start">
+      <button class="stopbtn" id="stop" data-i18n-title="title.stop" title="Stop & reset to start">
         <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       </button>
     </div>
@@ -283,7 +303,7 @@
 
     <div class="row">
       <div class="field">
-        <label>Speed <var id="spdVal">40 km/h</var></label>
+        <label><span data-i18n="field.speed">Speed</span> <var id="spdVal">40 km/h</var></label>
         <input type="range" id="spd" min="1" max="120" step="1" value="40" />
         <div class="presets" id="spdPresets">
           <button data-v="5">5</button><button data-v="20">20</button>
@@ -294,15 +314,15 @@
 
     <div class="row">
       <div class="field" style="flex:.9">
-        <label>Emit every <var id="rateVal">1.0 s</var></label>
+        <label><span data-i18n="field.emitEvery">Emit every</span> <var id="rateVal">1.0 s</var></label>
         <input type="range" id="rate" min="0.2" max="5" step="0.1" value="1" />
       </div>
       <div class="field" style="flex:1.1">
-        <label>Loop</label>
+        <label data-i18n="field.loop">Loop</label>
         <div class="seg" id="loopSeg">
-          <button data-loop="off" class="on">Off</button>
-          <button data-loop="restart">Restart</button>
-          <button data-loop="pingpong">Ping-pong</button>
+          <button data-loop="off" class="on" data-i18n="loop.off">Off</button>
+          <button data-loop="restart" data-i18n="loop.restart">Restart</button>
+          <button data-loop="pingpong" data-i18n="loop.pingpong">Ping-pong</button>
         </div>
       </div>
     </div>
@@ -310,28 +330,49 @@
     <div class="tools">
       <button class="tool" id="locate">
         <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 3h-2.06A7 7 0 0013 5.06V3h-2v2.06A7 7 0 005.06 11H3v2h2.06A7 7 0 0011 18.94V21h2v-2.06A7 7 0 0018.94 13H21v-2z"/></svg>
-        My location
+        <span data-i18n="tool.myLocation">My location</span>
       </button>
       <button class="tool" id="reverse" disabled>
         <svg viewBox="0 0 24 24"><path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/></svg>
-        Reverse
+        <span data-i18n="tool.reverse">Reverse</span>
       </button>
       <button class="tool" id="undo" disabled>
         <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a6 6 0 11-6 6H4a8 8 0 108-8z"/></svg>
-        Undo
+        <span data-i18n="tool.undo">Undo</span>
       </button>
       <button class="tool danger" id="clear" disabled>
         <svg viewBox="0 0 24 24"><path d="M6 7h12l-1 13a2 2 0 01-2 2H9a2 2 0 01-2-2L6 7zm3-3h6l1 2H8l1-2z"/></svg>
-        Clear
+        <span data-i18n="tool.clear">Clear</span>
       </button>
     </div>
 
     <details class="log">
-      <summary><i class="tick"></i> Emitted fixes <span id="logCount" style="margin-left:auto;color:var(--line-2);font-family:var(--mono)">0</span></summary>
+      <summary><i class="tick"></i> <span data-i18n="log.summary">Emitted fixes</span> <span id="logCount" style="margin-left:auto;color:var(--line-2);font-family:var(--mono)">0</span></summary>
       <div class="logwrap" id="logwrap">
-        <div class="logline">waiting for playback…</div>
+        <div class="logline" data-i18n="log.waiting">waiting for playback…</div>
       </div>
     </details>
+
+    <div class="about">
+      <label class="lang-pick">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.93 6h-2.95a15.7 15.7 0 00-1.38-3.56A8.03 8.03 0 0118.93 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14a7.96 7.96 0 010-4h3.38a16.5 16.5 0 000 4H4.26zm.81 2h2.95c.32 1.25.78 2.45 1.38 3.56A8.03 8.03 0 015.07 16zm2.95-8H5.07a8.03 8.03 0 014.33-3.56A15.7 15.7 0 008.02 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82A13.7 13.7 0 0112 19.96zM14.34 14H9.66a14.7 14.7 0 010-4h4.68a14.7 14.7 0 010 4zm.27 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 01-4.33 3.56zM16.36 14a16.5 16.5 0 000-4h3.38a7.96 7.96 0 010 4h-3.38z"/></svg>
+        <select id="langSel" aria-label="Language">
+          <option value="auto" data-i18n="about.auto">Auto</option>
+          <option value="en">English</option>
+          <option value="ru">Русский</option>
+          <option value="de">Deutsch</option>
+          <option value="es">Español</option>
+          <option value="pt">Português</option>
+          <option value="fr">Français</option>
+          <option value="zh">中文</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+      </label>
+      <button class="ghlink" id="btnGithub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 00.5 12a11.5 11.5 0 007.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.3-1.7-1.3-1.7-1.06-.72.08-.71.08-.71 1.17.08 1.79 1.2 1.79 1.2 1.04 1.78 2.73 1.27 3.4.97.1-.75.4-1.27.74-1.56-2.56-.29-5.26-1.28-5.26-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 015.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.7 5.41-5.27 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0023.5 12 11.5 11.5 0 0012 .5z"/></svg>
+        <span data-i18n="about.github">View on GitHub</span>
+      </button>
+    </div>
 
     <div class="credit">Route Spoofer <span id="appVersion">v1.0</span> · by <b>Maxim Popelnitskiy</b></div>
   </div>
@@ -339,21 +380,21 @@
   <!-- readiness / setup overlay (native only) -->
   <div id="setup">
     <div class="setup-card">
-      <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> Enable mock GPS</h2>
-      <p>Route Spoofer needs two things before it can drive your device location.</p>
+      <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> <span data-i18n="setup.title">Enable mock GPS</span></h2>
+      <p data-i18n="setup.intro">Route Spoofer needs two things before it can drive your device location.</p>
       <div class="check" id="chkPerm">
         <div class="ic">1</div>
-        <div class="body"><b>Location &amp; notification permission</b><span>Allow access so the service can run.</span></div>
+        <div class="body"><b data-i18n="setup.check1title">Location &amp; notification permission</b><span data-i18n="setup.check1desc">Allow access so the service can run.</span></div>
       </div>
       <div class="check" id="chkMock">
         <div class="ic">2</div>
-        <div class="body"><b>Selected as mock location app</b><span>Developer options → “Select mock location app” → Route Spoofer.</span></div>
+        <div class="body"><b data-i18n="setup.check2title">Selected as mock location app</b><span data-i18n="setup.check2desc">Developer options → “Select mock location app” → Route Spoofer.</span></div>
       </div>
       <div class="setup-actions">
-        <button class="primary" id="btnGrant">Grant permissions</button>
-        <button id="btnDev">Open Developer options</button>
-        <button id="btnRecheck">Re-check</button>
-        <button id="btnDismiss" style="color:var(--muted)">Dismiss</button>
+        <button class="primary" id="btnGrant" data-i18n="setup.grant">Grant permissions</button>
+        <button id="btnDev" data-i18n="setup.openDev">Open Developer options</button>
+        <button id="btnRecheck" data-i18n="setup.recheck">Re-check</button>
+        <button id="btnDismiss" style="color:var(--muted)" data-i18n="setup.dismiss">Dismiss</button>
       </div>
     </div>
   </div>
@@ -361,19 +402,19 @@
   <!-- developer-options-off helper (native only) -->
   <div id="devhelp">
     <div class="setup-card">
-      <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> Developer options are off</h2>
-      <p>Mock GPS needs Android <b>Developer options</b> enabled — a one-time setting. Turn it on, then come back and re-check.</p>
+      <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> <span data-i18n="dev.title">Developer options are off</span></h2>
+      <p data-i18n="dev.intro">Mock GPS needs Android Developer options enabled — a one-time setting. Turn it on, then come back and re-check.</p>
       <ol class="dev-steps">
-        <li>Open <b>Settings → About phone</b><small>On Samsung: → Software information.</small></li>
-        <li>Tap <b>Build number</b> 7 times</li>
-        <li>Enter your PIN/password if asked</li>
-        <li>Come back here and tap <b>Re-check</b></li>
+        <li><span data-i18n="dev.step1">Open Settings → About phone</span><small data-i18n="dev.step1sub">On Samsung: → Software information.</small></li>
+        <li><span data-i18n="dev.step2">Tap Build number 7 times</span></li>
+        <li><span data-i18n="dev.step3">Enter your PIN/password if asked</span></li>
+        <li><span data-i18n="dev.step4">Come back here and tap Re-check</span></li>
       </ol>
-      <p class="dev-note">The exact path varies slightly by phone brand.</p>
+      <p class="dev-note" data-i18n="dev.note">The exact path varies slightly by phone brand.</p>
       <div class="setup-actions">
-        <button class="primary" id="btnAbout">Open About phone</button>
-        <button id="btnDevRecheck">Re-check</button>
-        <button id="btnDevClose" style="color:var(--muted)">Close</button>
+        <button class="primary" id="btnAbout" data-i18n="dev.openAbout">Open About phone</button>
+        <button id="btnDevRecheck" data-i18n="dev.recheck">Re-check</button>
+        <button id="btnDevClose" style="color:var(--muted)" data-i18n="dev.close">Close</button>
       </div>
     </div>
   </div>
@@ -409,6 +450,346 @@ const Cap = window.Capacitor;
 const isNative = !!(Cap && Cap.isNativePlatform && Cap.isNativePlatform());
 const FakeGps = isNative && Cap.Plugins ? Cap.Plugins.FakeGps : null;
 const Geo = isNative && Cap.Plugins ? Cap.Plugins.Geolocation : null;
+const Browser = Cap && Cap.Plugins ? Cap.Plugins.Browser : null;
+
+/* =====================================================================
+   i18n — every user-facing string keyed by id. English is the source of
+   truth and the fallback; t(key) returns the active language's string,
+   falling back to English, then the key itself. Static UI nodes carry a
+   data-i18n / data-i18n-title attribute and are (re)rendered by applyI18n().
+   Brand name "Route Spoofer" stays untranslated in every locale.
+   Note: Chinese (zh) and Hindi (hi) are machine translations pending review.
+   ===================================================================== */
+const GITHUB_URL = 'https://github.com/Gegirhasut/route-spoofer';
+const I18N = {
+  en: {
+    'state.ready':'Ready','state.emitting':'Emitting','state.paused':'Paused',
+    'hud.speed':'Speed','hud.heading':'Heading','hud.progress':'Progress','hud.distance':'Distance',
+    'hint.tapMap':'Tap the map to drop point A, then B, then C…',
+    'live.seg':'seg','live.emit':'emit','live.elapsed':'elapsed','live.noRoute':'no route',
+    'field.speed':'Speed','field.emitEvery':'Emit every','field.loop':'Loop',
+    'loop.off':'Off','loop.restart':'Restart','loop.pingpong':'Ping-pong',
+    'tool.myLocation':'My location','tool.reverse':'Reverse','tool.undo':'Undo','tool.clear':'Clear',
+    'log.summary':'Emitted fixes','log.waiting':'waiting for playback…',
+    'setup.title':'Enable mock GPS',
+    'setup.intro':'Route Spoofer needs two things before it can drive your device location.',
+    'setup.check1title':'Location & notification permission',
+    'setup.check1desc':'Allow access so the service can run.',
+    'setup.check2title':'Selected as mock location app',
+    'setup.check2desc':'Developer options → “Select mock location app” → Route Spoofer.',
+    'setup.grant':'Grant permissions','setup.openDev':'Open Developer options',
+    'setup.recheck':'Re-check','setup.dismiss':'Dismiss',
+    'dev.title':'Developer options are off',
+    'dev.intro':'Mock GPS needs Android Developer options enabled — a one-time setting. Turn it on, then come back and re-check.',
+    'dev.step1':'Open Settings → About phone','dev.step1sub':'On Samsung: → Software information.',
+    'dev.step2':'Tap Build number 7 times','dev.step3':'Enter your PIN/password if asked',
+    'dev.step4':'Come back here and tap Re-check',
+    'dev.note':'The exact path varies slightly by phone brand.',
+    'dev.openAbout':'Open About phone','dev.recheck':'Re-check','dev.close':'Close',
+    'hint.dropFirst':'Drop at least one point first.','hint.routeComplete':'Route complete.',
+    'hint.finishSetup':'Finish setup to start.','hint.couldNotStart':'Could not start mock service.',
+    'hint.locating':'Locating…','hint.centered':'Centered on your location.',
+    'hint.locationDenied':'Location denied.','hint.geoUnavailable':'Geolocation unavailable.',
+    'hint.ready':'Ready — tap play.','hint.devOn':'Developer options on — now pick the mock app.',
+    'hint.devStillOff':'Still off — enable Developer options to continue.',
+    'wp.startRemove':'Start — tap to remove','wp.tapRemove':'Tap to remove',
+    'title.play':'Play / pause','title.stop':'Stop & reset to start',
+    'about.auto':'Auto','about.github':'View on GitHub',
+  },
+  ru: {
+    'state.ready':'Готов','state.emitting':'Передача','state.paused':'Пауза',
+    'hud.speed':'Скорость','hud.heading':'Курс','hud.progress':'Прогресс','hud.distance':'Расстояние',
+    'hint.tapMap':'Коснитесь карты, чтобы поставить точку A, затем B, C…',
+    'live.seg':'сегм','live.emit':'выдача','live.elapsed':'прошло','live.noRoute':'нет маршрута',
+    'field.speed':'Скорость','field.emitEvery':'Передавать каждые','field.loop':'Цикл',
+    'loop.off':'Выкл','loop.restart':'Заново','loop.pingpong':'Туда-обратно',
+    'tool.myLocation':'Моё место','tool.reverse':'Реверс','tool.undo':'Отмена','tool.clear':'Очистить',
+    'log.summary':'Переданные точки','log.waiting':'ожидание воспроизведения…',
+    'setup.title':'Включить фиктивный GPS',
+    'setup.intro':'Route Spoofer нужно две вещи, чтобы управлять локацией устройства.',
+    'setup.check1title':'Доступ к геолокации и уведомлениям',
+    'setup.check1desc':'Разрешите доступ, чтобы служба работала.',
+    'setup.check2title':'Выбрано приложение для фиктивной локации',
+    'setup.check2desc':'Для разработчиков → «Приложение для фиктивных местоположений» → Route Spoofer.',
+    'setup.grant':'Выдать разрешения','setup.openDev':'Открыть «Для разработчиков»',
+    'setup.recheck':'Проверить снова','setup.dismiss':'Скрыть',
+    'dev.title':'Режим разработчика выключен',
+    'dev.intro':'Фиктивному GPS нужны включённые «Параметры разработчика» Android — это разовая настройка. Включите их и вернитесь для повторной проверки.',
+    'dev.step1':'Откройте Настройки → О телефоне','dev.step1sub':'На Samsung: → Сведения о ПО.',
+    'dev.step2':'Нажмите «Номер сборки» 7 раз','dev.step3':'Введите PIN-код или пароль, если потребуется',
+    'dev.step4':'Вернитесь сюда и нажмите «Проверить снова»',
+    'dev.note':'Точный путь немного отличается у разных производителей.',
+    'dev.openAbout':'Открыть «О телефоне»','dev.recheck':'Проверить снова','dev.close':'Закрыть',
+    'hint.dropFirst':'Сначала поставьте хотя бы одну точку.','hint.routeComplete':'Маршрут завершён.',
+    'hint.finishSetup':'Завершите настройку для запуска.','hint.couldNotStart':'Не удалось запустить службу фиктивного GPS.',
+    'hint.locating':'Определение…','hint.centered':'Карта по вашему местоположению.',
+    'hint.locationDenied':'Доступ к геолокации запрещён.','hint.geoUnavailable':'Геолокация недоступна.',
+    'hint.ready':'Готово — нажмите воспроизведение.','hint.devOn':'Режим разработчика включён — выберите приложение для фиктивной локации.',
+    'hint.devStillOff':'Всё ещё выключено — включите режим разработчика, чтобы продолжить.',
+    'wp.startRemove':'Старт — нажмите, чтобы удалить','wp.tapRemove':'Нажмите, чтобы удалить',
+    'title.play':'Воспроизвести / пауза','title.stop':'Стоп и сброс к началу',
+    'about.auto':'Авто','about.github':'Открыть на GitHub',
+  },
+  de: {
+    'state.ready':'Bereit','state.emitting':'Sendet','state.paused':'Pausiert',
+    'hud.speed':'Tempo','hud.heading':'Kurs','hud.progress':'Fortschritt','hud.distance':'Distanz',
+    'hint.tapMap':'Tippe auf die Karte für Punkt A, dann B, dann C…',
+    'live.seg':'Seg','live.emit':'Senden','live.elapsed':'Dauer','live.noRoute':'keine Route',
+    'field.speed':'Tempo','field.emitEvery':'Senden alle','field.loop':'Schleife',
+    'loop.off':'Aus','loop.restart':'Neustart','loop.pingpong':'Pingpong',
+    'tool.myLocation':'Mein Standort','tool.reverse':'Umkehren','tool.undo':'Rückgängig','tool.clear':'Löschen',
+    'log.summary':'Gesendete Punkte','log.waiting':'warte auf Wiedergabe…',
+    'setup.title':'Mock-GPS aktivieren',
+    'setup.intro':'Route Spoofer benötigt zwei Dinge, um deinen Gerätestandort zu steuern.',
+    'setup.check1title':'Standort- und Benachrichtigungsberechtigung',
+    'setup.check1desc':'Erlaube den Zugriff, damit der Dienst läuft.',
+    'setup.check2title':'Als Mock-Standort-App ausgewählt',
+    'setup.check2desc':'Entwickleroptionen → „App für simulierte Standorte“ → Route Spoofer.',
+    'setup.grant':'Berechtigungen erteilen','setup.openDev':'Entwickleroptionen öffnen',
+    'setup.recheck':'Erneut prüfen','setup.dismiss':'Schließen',
+    'dev.title':'Entwickleroptionen sind aus',
+    'dev.intro':'Mock-GPS benötigt aktivierte Android-Entwickleroptionen – eine einmalige Einstellung. Aktiviere sie und prüfe dann erneut.',
+    'dev.step1':'Öffne Einstellungen → Über das Telefon','dev.step1sub':'Bei Samsung: → Softwareinformationen.',
+    'dev.step2':'Tippe 7-mal auf „Build-Nummer“','dev.step3':'Gib bei Aufforderung deine PIN/dein Passwort ein',
+    'dev.step4':'Komm zurück und tippe auf „Erneut prüfen“',
+    'dev.note':'Der genaue Pfad unterscheidet sich je nach Hersteller leicht.',
+    'dev.openAbout':'Über das Telefon öffnen','dev.recheck':'Erneut prüfen','dev.close':'Schließen',
+    'hint.dropFirst':'Setze zuerst mindestens einen Punkt.','hint.routeComplete':'Route abgeschlossen.',
+    'hint.finishSetup':'Schließe die Einrichtung ab, um zu starten.','hint.couldNotStart':'Mock-Dienst konnte nicht gestartet werden.',
+    'hint.locating':'Suche…','hint.centered':'Auf deinen Standort zentriert.',
+    'hint.locationDenied':'Standort verweigert.','hint.geoUnavailable':'Standortdienst nicht verfügbar.',
+    'hint.ready':'Bereit – tippe auf Wiedergabe.','hint.devOn':'Entwickleroptionen an – wähle jetzt die Mock-App.',
+    'hint.devStillOff':'Immer noch aus – aktiviere die Entwickleroptionen, um fortzufahren.',
+    'wp.startRemove':'Start – tippen zum Entfernen','wp.tapRemove':'Tippen zum Entfernen',
+    'title.play':'Wiedergabe / Pause','title.stop':'Stopp & zum Start zurücksetzen',
+    'about.auto':'Auto','about.github':'Auf GitHub ansehen',
+  },
+  es: {
+    'state.ready':'Listo','state.emitting':'Emitiendo','state.paused':'En pausa',
+    'hud.speed':'Velocidad','hud.heading':'Rumbo','hud.progress':'Progreso','hud.distance':'Distancia',
+    'hint.tapMap':'Toca el mapa para poner el punto A, luego B, luego C…',
+    'live.seg':'seg','live.emit':'emisión','live.elapsed':'tiempo','live.noRoute':'sin ruta',
+    'field.speed':'Velocidad','field.emitEvery':'Emitir cada','field.loop':'Bucle',
+    'loop.off':'No','loop.restart':'Reiniciar','loop.pingpong':'Ida y vuelta',
+    'tool.myLocation':'Mi ubicación','tool.reverse':'Invertir','tool.undo':'Deshacer','tool.clear':'Borrar',
+    'log.summary':'Puntos emitidos','log.waiting':'esperando reproducción…',
+    'setup.title':'Activar GPS simulado',
+    'setup.intro':'Route Spoofer necesita dos cosas antes de controlar la ubicación de tu dispositivo.',
+    'setup.check1title':'Permiso de ubicación y notificaciones',
+    'setup.check1desc':'Permite el acceso para que el servicio funcione.',
+    'setup.check2title':'Seleccionada como app de ubicación simulada',
+    'setup.check2desc':'Opciones de desarrollador → «Aplicación de ubicaciones simuladas» → Route Spoofer.',
+    'setup.grant':'Conceder permisos','setup.openDev':'Abrir opciones de desarrollador',
+    'setup.recheck':'Volver a comprobar','setup.dismiss':'Descartar',
+    'dev.title':'Las opciones de desarrollador están desactivadas',
+    'dev.intro':'El GPS simulado necesita las opciones de desarrollador de Android activadas, un ajuste único. Actívalas y vuelve a comprobar.',
+    'dev.step1':'Abre Ajustes → Información del teléfono','dev.step1sub':'En Samsung: → Información de software.',
+    'dev.step2':'Toca «Número de compilación» 7 veces','dev.step3':'Introduce tu PIN/contraseña si se solicita',
+    'dev.step4':'Vuelve aquí y toca «Volver a comprobar»',
+    'dev.note':'La ruta exacta varía un poco según la marca del teléfono.',
+    'dev.openAbout':'Abrir Información del teléfono','dev.recheck':'Volver a comprobar','dev.close':'Cerrar',
+    'hint.dropFirst':'Pon al menos un punto primero.','hint.routeComplete':'Ruta completada.',
+    'hint.finishSetup':'Completa la configuración para empezar.','hint.couldNotStart':'No se pudo iniciar el servicio simulado.',
+    'hint.locating':'Localizando…','hint.centered':'Centrado en tu ubicación.',
+    'hint.locationDenied':'Ubicación denegada.','hint.geoUnavailable':'Geolocalización no disponible.',
+    'hint.ready':'Listo: toca reproducir.','hint.devOn':'Opciones de desarrollador activadas: elige la app de ubicación simulada.',
+    'hint.devStillOff':'Sigue desactivado: activa las opciones de desarrollador para continuar.',
+    'wp.startRemove':'Inicio: toca para eliminar','wp.tapRemove':'Toca para eliminar',
+    'title.play':'Reproducir / pausar','title.stop':'Detener y volver al inicio',
+    'about.auto':'Auto','about.github':'Ver en GitHub',
+  },
+  pt: {
+    'state.ready':'Pronto','state.emitting':'Emitindo','state.paused':'Pausado',
+    'hud.speed':'Velocidade','hud.heading':'Direção','hud.progress':'Progresso','hud.distance':'Distância',
+    'hint.tapMap':'Toque no mapa para marcar o ponto A, depois B, depois C…',
+    'live.seg':'seg','live.emit':'emissão','live.elapsed':'tempo','live.noRoute':'sem rota',
+    'field.speed':'Velocidade','field.emitEvery':'Emitir a cada','field.loop':'Repetição',
+    'loop.off':'Desl.','loop.restart':'Reiniciar','loop.pingpong':'Vai e volta',
+    'tool.myLocation':'Meu local','tool.reverse':'Inverter','tool.undo':'Desfazer','tool.clear':'Limpar',
+    'log.summary':'Pontos emitidos','log.waiting':'aguardando reprodução…',
+    'setup.title':'Ativar GPS falso',
+    'setup.intro':'O Route Spoofer precisa de duas coisas antes de controlar a localização do aparelho.',
+    'setup.check1title':'Permissão de localização e notificações',
+    'setup.check1desc':'Permita o acesso para o serviço funcionar.',
+    'setup.check2title':'Selecionado como app de localização falsa',
+    'setup.check2desc':'Opções do desenvolvedor → «Aplicativo de localização fictícia» → Route Spoofer.',
+    'setup.grant':'Conceder permissões','setup.openDev':'Abrir opções do desenvolvedor',
+    'setup.recheck':'Verificar de novo','setup.dismiss':'Dispensar',
+    'dev.title':'As opções do desenvolvedor estão desativadas',
+    'dev.intro':'O GPS falso precisa das opções do desenvolvedor do Android ativadas — um ajuste único. Ative-as e verifique de novo.',
+    'dev.step1':'Abra Configurações → Sobre o telefone','dev.step1sub':'No Samsung: → Informações de software.',
+    'dev.step2':'Toque em «Número da versão» 7 vezes','dev.step3':'Digite seu PIN/senha se for solicitado',
+    'dev.step4':'Volte aqui e toque em «Verificar de novo»',
+    'dev.note':'O caminho exato varia um pouco conforme a marca do aparelho.',
+    'dev.openAbout':'Abrir Sobre o telefone','dev.recheck':'Verificar de novo','dev.close':'Fechar',
+    'hint.dropFirst':'Marque ao menos um ponto primeiro.','hint.routeComplete':'Rota concluída.',
+    'hint.finishSetup':'Conclua a configuração para iniciar.','hint.couldNotStart':'Não foi possível iniciar o serviço falso.',
+    'hint.locating':'Localizando…','hint.centered':'Centralizado na sua localização.',
+    'hint.locationDenied':'Localização negada.','hint.geoUnavailable':'Geolocalização indisponível.',
+    'hint.ready':'Pronto — toque em reproduzir.','hint.devOn':'Opções do desenvolvedor ativadas — escolha o app de localização falsa.',
+    'hint.devStillOff':'Ainda desativado — ative as opções do desenvolvedor para continuar.',
+    'wp.startRemove':'Início — toque para remover','wp.tapRemove':'Toque para remover',
+    'title.play':'Reproduzir / pausar','title.stop':'Parar e voltar ao início',
+    'about.auto':'Auto','about.github':'Ver no GitHub',
+  },
+  fr: {
+    'state.ready':'Prêt','state.emitting':'Émission','state.paused':'En pause',
+    'hud.speed':'Vitesse','hud.heading':'Cap','hud.progress':'Progression','hud.distance':'Distance',
+    'hint.tapMap':'Touchez la carte pour placer le point A, puis B, puis C…',
+    'live.seg':'seg','live.emit':'émission','live.elapsed':'temps','live.noRoute':'aucun trajet',
+    'field.speed':'Vitesse','field.emitEvery':'Émettre toutes les','field.loop':'Boucle',
+    'loop.off':'Désact.','loop.restart':'Redémarrer','loop.pingpong':'Aller-retour',
+    'tool.myLocation':'Ma position','tool.reverse':'Inverser','tool.undo':'Annuler','tool.clear':'Effacer',
+    'log.summary':'Points émis','log.waiting':'en attente de lecture…',
+    'setup.title':'Activer le GPS fictif',
+    'setup.intro':'Route Spoofer a besoin de deux choses avant de contrôler la position de l’appareil.',
+    'setup.check1title':'Autorisation de localisation et de notifications',
+    'setup.check1desc':'Autorisez l’accès pour que le service fonctionne.',
+    'setup.check2title':'Sélectionné comme appli de position fictive',
+    'setup.check2desc':'Options pour les développeurs → « Application de position fictive » → Route Spoofer.',
+    'setup.grant':'Accorder les autorisations','setup.openDev':'Ouvrir les options pour développeurs',
+    'setup.recheck':'Revérifier','setup.dismiss':'Ignorer',
+    'dev.title':'Les options pour développeurs sont désactivées',
+    'dev.intro':'Le GPS fictif nécessite les options pour développeurs d’Android activées — un réglage unique. Activez-les puis revérifiez.',
+    'dev.step1':'Ouvrez Paramètres → À propos du téléphone','dev.step1sub':'Sur Samsung : → Informations sur le logiciel.',
+    'dev.step2':'Touchez « Numéro de build » 7 fois','dev.step3':'Saisissez votre code/mot de passe si demandé',
+    'dev.step4':'Revenez ici et touchez « Revérifier »',
+    'dev.note':'Le chemin exact varie légèrement selon la marque.',
+    'dev.openAbout':'Ouvrir À propos du téléphone','dev.recheck':'Revérifier','dev.close':'Fermer',
+    'hint.dropFirst':'Placez d’abord au moins un point.','hint.routeComplete':'Trajet terminé.',
+    'hint.finishSetup':'Terminez la configuration pour démarrer.','hint.couldNotStart':'Impossible de démarrer le service fictif.',
+    'hint.locating':'Localisation…','hint.centered':'Centré sur votre position.',
+    'hint.locationDenied':'Localisation refusée.','hint.geoUnavailable':'Géolocalisation indisponible.',
+    'hint.ready':'Prêt — touchez lecture.','hint.devOn':'Options développeur activées — choisissez l’appli de position fictive.',
+    'hint.devStillOff':'Toujours désactivé — activez les options développeur pour continuer.',
+    'wp.startRemove':'Départ — touchez pour supprimer','wp.tapRemove':'Touchez pour supprimer',
+    'title.play':'Lecture / pause','title.stop':'Arrêter et revenir au départ',
+    'about.auto':'Auto','about.github':'Voir sur GitHub',
+  },
+  zh: {
+    'state.ready':'就绪','state.emitting':'发送中','state.paused':'已暂停',
+    'hud.speed':'速度','hud.heading':'航向','hud.progress':'进度','hud.distance':'距离',
+    'hint.tapMap':'点击地图放置点 A，然后 B、C…',
+    'live.seg':'段','live.emit':'发送','live.elapsed':'用时','live.noRoute':'无路线',
+    'field.speed':'速度','field.emitEvery':'发送间隔','field.loop':'循环',
+    'loop.off':'关','loop.restart':'重新开始','loop.pingpong':'往返',
+    'tool.myLocation':'我的位置','tool.reverse':'反向','tool.undo':'撤销','tool.clear':'清除',
+    'log.summary':'已发送的点','log.waiting':'等待播放…',
+    'setup.title':'启用模拟 GPS',
+    'setup.intro':'Route Spoofer 需要两项设置才能控制设备位置。',
+    'setup.check1title':'位置和通知权限',
+    'setup.check1desc':'请允许访问，以便服务运行。',
+    'setup.check2title':'已选为模拟位置应用',
+    'setup.check2desc':'开发者选项 →“选择模拟位置应用”→ Route Spoofer。',
+    'setup.grant':'授予权限','setup.openDev':'打开开发者选项',
+    'setup.recheck':'重新检查','setup.dismiss':'忽略',
+    'dev.title':'开发者选项未开启',
+    'dev.intro':'模拟 GPS 需要开启 Android 开发者选项，这是一次性设置。开启后返回并重新检查。',
+    'dev.step1':'打开 设置 → 关于手机','dev.step1sub':'三星机型：→ 软件信息。',
+    'dev.step2':'连续点击“版本号”7 次','dev.step3':'如有提示，请输入 PIN 码或密码',
+    'dev.step4':'返回此处并点击“重新检查”',
+    'dev.note':'具体路径因手机品牌略有不同。',
+    'dev.openAbout':'打开“关于手机”','dev.recheck':'重新检查','dev.close':'关闭',
+    'hint.dropFirst':'请先放置至少一个点。','hint.routeComplete':'路线完成。',
+    'hint.finishSetup':'完成设置后即可开始。','hint.couldNotStart':'无法启动模拟服务。',
+    'hint.locating':'定位中…','hint.centered':'已居中到你的位置。',
+    'hint.locationDenied':'位置权限被拒绝。','hint.geoUnavailable':'无法使用定位。',
+    'hint.ready':'就绪 — 点击播放。','hint.devOn':'开发者选项已开启 — 现在选择模拟位置应用。',
+    'hint.devStillOff':'仍未开启 — 请开启开发者选项以继续。',
+    'wp.startRemove':'起点 — 点击删除','wp.tapRemove':'点击删除',
+    'title.play':'播放 / 暂停','title.stop':'停止并重置到起点',
+    'about.auto':'自动','about.github':'在 GitHub 查看',
+  },
+  hi: {
+    'state.ready':'तैयार','state.emitting':'भेज रहा है','state.paused':'रुका हुआ',
+    'hud.speed':'गति','hud.heading':'दिशा','hud.progress':'प्रगति','hud.distance':'दूरी',
+    'hint.tapMap':'बिंदु A, फिर B, फिर C रखने के लिए मानचित्र पर टैप करें…',
+    'live.seg':'सेग','live.emit':'भेजना','live.elapsed':'समय','live.noRoute':'कोई रूट नहीं',
+    'field.speed':'गति','field.emitEvery':'हर बार भेजें','field.loop':'लूप',
+    'loop.off':'बंद','loop.restart':'फिर से शुरू','loop.pingpong':'आगे-पीछे',
+    'tool.myLocation':'मेरा स्थान','tool.reverse':'उल्टा','tool.undo':'पूर्ववत्','tool.clear':'साफ़ करें',
+    'log.summary':'भेजे गए बिंदु','log.waiting':'प्लेबैक की प्रतीक्षा…',
+    'setup.title':'मॉक GPS चालू करें',
+    'setup.intro':'डिवाइस का स्थान नियंत्रित करने से पहले Route Spoofer को दो चीज़ें चाहिए।',
+    'setup.check1title':'स्थान और सूचना अनुमति',
+    'setup.check1desc':'सेवा चलाने के लिए पहुँच की अनुमति दें।',
+    'setup.check2title':'मॉक स्थान ऐप के रूप में चुना गया',
+    'setup.check2desc':'डेवलपर विकल्प → «मॉक स्थान ऐप चुनें» → Route Spoofer।',
+    'setup.grant':'अनुमतियाँ दें','setup.openDev':'डेवलपर विकल्प खोलें',
+    'setup.recheck':'फिर से जाँचें','setup.dismiss':'खारिज करें',
+    'dev.title':'डेवलपर विकल्प बंद हैं',
+    'dev.intro':'मॉक GPS के लिए Android के डेवलपर विकल्प चालू होने चाहिए — यह एक बार की सेटिंग है। इसे चालू करें और फिर से जाँचें।',
+    'dev.step1':'सेटिंग → फ़ोन के बारे में खोलें','dev.step1sub':'Samsung पर: → सॉफ़्टवेयर जानकारी।',
+    'dev.step2':'«बिल्ड नंबर» पर 7 बार टैप करें','dev.step3':'पूछे जाने पर अपना PIN/पासवर्ड डालें',
+    'dev.step4':'यहाँ लौटें और «फिर से जाँचें» पर टैप करें',
+    'dev.note':'सटीक रास्ता फ़ोन ब्रांड के अनुसार थोड़ा अलग होता है।',
+    'dev.openAbout':'फ़ोन के बारे में खोलें','dev.recheck':'फिर से जाँचें','dev.close':'बंद करें',
+    'hint.dropFirst':'पहले कम से कम एक बिंदु रखें।','hint.routeComplete':'रूट पूरा हुआ।',
+    'hint.finishSetup':'शुरू करने के लिए सेटअप पूरा करें।','hint.couldNotStart':'मॉक सेवा शुरू नहीं हो सकी।',
+    'hint.locating':'ढूँढ रहा है…','hint.centered':'आपके स्थान पर केंद्रित।',
+    'hint.locationDenied':'स्थान अस्वीकृत।','hint.geoUnavailable':'जियोलोकेशन उपलब्ध नहीं।',
+    'hint.ready':'तैयार — प्ले पर टैप करें।','hint.devOn':'डेवलपर विकल्प चालू — अब मॉक स्थान ऐप चुनें।',
+    'hint.devStillOff':'अब भी बंद — जारी रखने के लिए डेवलपर विकल्प चालू करें।',
+    'wp.startRemove':'शुरुआत — हटाने के लिए टैप करें','wp.tapRemove':'हटाने के लिए टैप करें',
+    'title.play':'प्ले / पॉज़','title.stop':'रोकें और शुरुआत पर रीसेट करें',
+    'about.auto':'स्वतः','about.github':'GitHub पर देखें',
+  },
+};
+
+let curLang = 'en';
+function mapLang(raw){
+  if(!raw) return null;
+  const l = String(raw).toLowerCase();
+  if(l.startsWith('ru')) return 'ru';
+  if(l.startsWith('de')) return 'de';
+  if(l.startsWith('es')) return 'es';
+  if(l.startsWith('pt')) return 'pt';
+  if(l.startsWith('fr')) return 'fr';
+  if(l.startsWith('zh')) return 'zh';   // zh-CN / zh-Hans / zh-*
+  if(l.startsWith('hi')) return 'hi';
+  if(l.startsWith('en')) return 'en';
+  return null;
+}
+function detectLang(){
+  const cands = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language||'en'];
+  for(const c of cands){ const code = mapLang(c); if(code) return code; }
+  return 'en';
+}
+function storedLangPref(){ try{ return localStorage.getItem('routeSpooferLang'); }catch(e){ return null; } }
+function t(key){
+  const tbl = I18N[curLang] || I18N.en;
+  if(key in tbl) return tbl[key];
+  if(key in I18N.en) return I18N.en[key];
+  return key;
+}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.getAttribute('data-i18n')); });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.setAttribute('title', t(el.getAttribute('data-i18n-title'))); });
+  // dynamic bits that aren't plain static text nodes
+  $('stateLabel').textContent = stateLabelText(S.state);
+  renderLiveCoord(S.waypoints.length ? sampleAt(S.traveled) : null);
+  if(S.waypoints.length) refreshMarkers();              // rebind localized tooltips
+  if(!S.waypoints.length && $('hint').style.opacity==='1') showHint();
+  const sel=$('langSel'); if(sel){ const p=storedLangPref(); sel.value = (p && I18N[p]) ? p : 'auto'; }
+}
+function initLang(){
+  const pref = storedLangPref();
+  curLang = (pref && I18N[pref]) ? pref : detectLang();
+  document.documentElement.lang = curLang;
+}
+function setLang(code){            // explicit user choice ('auto' resolves live)
+  if(code==='auto'){ try{ localStorage.removeItem('routeSpooferLang'); }catch(e){} curLang = detectLang(); }
+  else { try{ localStorage.setItem('routeSpooferLang', code); }catch(e){} curLang = I18N[code] ? code : 'en'; }
+  document.documentElement.lang = curLang;
+  applyI18n();
+}
+function stateLabelText(st){ return st==='playing' ? t('state.emitting') : st==='paused' ? t('state.paused') : t('state.ready'); }
+async function openGithub(){
+  try{ if(isNative && Browser && Browser.open){ await Browser.open({ url: GITHUB_URL }); return; } }
+  catch(e){ console.warn('Browser.open failed',e); }
+  try{ window.open(GITHUB_URL, isNative ? '_system' : '_blank'); }
+  catch(e){ location.href = GITHUB_URL; }
+}
 
 /* ---------- map ---------- */
 const MOSCOW = [55.751244, 37.618423];
@@ -495,7 +876,7 @@ function refreshMarkers(){
     m.on('drag',e=>{ const ll=e.target.getLatLng(); S.waypoints[i]={lat:ll.lat,lng:ll.lng}; if(S.polyline) S.polyline.setLatLngs(S.waypoints.map(q=>[q.lat,q.lng])); });
     m.on('dragend',()=>{ recompute(); persist(); });
     m.on('click',()=>{ if(S.state==='idle'){ removeWaypoint(i);} });
-    m.bindTooltip(i===0?'Start — tap to remove':'Tap to remove',{direction:'top',offset:[0,-12],opacity:.9});
+    m.bindTooltip(i===0?t('wp.startRemove'):t('wp.tapRemove'),{direction:'top',offset:[0,-12],opacity:.9});
     S.markers.push(m);
   });
 }
@@ -515,8 +896,7 @@ map.on('click', e=>{ if(S.state!=='idle') return; addWaypoint(e.latlng); persist
 /* ---------- shared UI state ---------- */
 function setState(st){
   S.state=st; document.body.dataset.state=st;
-  document.getElementById('stateLabel').textContent =
-    st==='playing'?'Emitting' : st==='paused'?'Paused' : 'Ready';
+  document.getElementById('stateLabel').textContent = stateLabelText(st);
   document.getElementById('playIcon').innerHTML = st==='playing'
     ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>'      // pause
     : '<path d="M8 5v14l11-7z"/>';                  // play
@@ -528,7 +908,7 @@ function setState(st){
    BROWSER preview engine (requestAnimationFrame). Disabled on native.
    ===================================================================== */
 function play(){
-  if(S.waypoints.length<1){ flashHint('Drop at least one point first.'); return; }
+  if(S.waypoints.length<1){ flashHint(t('hint.dropFirst')); return; }
   if(S.state==='playing'){ pause(); return; }
   if(S.state==='idle'){ S.traveled=0; S.dir=1; S.pausedElapsed=0; S.emitCount=0; clearLog(); ensureEmitter(); }
   setState('playing');
@@ -572,7 +952,7 @@ function loop(now){
 function finishAtEnd(){
   const fix=sampleAt(S.total); moveEmitter(fix); paintHud(fix); emitFix(fix);
   setState('idle'); S.pausedElapsed=0;
-  flashHint('Route complete.');
+  flashHint(t('hint.routeComplete'));
 }
 function emitFix(fix){
   if(!fix) return;
@@ -590,13 +970,13 @@ function emitFix(fix){
    moving marker / HUD / log follow `fix` events from the native clock.
    ===================================================================== */
 async function nativePlay(){
-  if(S.waypoints.length<1){ flashHint('Drop at least one point first.'); return; }
+  if(S.waypoints.length<1){ flashHint(t('hint.dropFirst')); return; }
   if(S.state==='playing'){ try{ await FakeGps.pause(); }catch(e){ console.warn(e);} setState('paused'); return; }
   if(S.state==='paused'){ try{ await FakeGps.resume(); }catch(e){ console.warn(e);} setState('playing'); return; }
 
   // idle → start. Gate on readiness first.
   const st = await refreshReady();
-  if(!st || !st.ready){ openSetup(); flashHint('Finish setup to start.'); return; }
+  if(!st || !st.ready){ openSetup(); flashHint(t('hint.finishSetup')); return; }
 
   clearLog(); S.emitCount=0; S.traveled=0; ensureEmitter();
   try{
@@ -605,7 +985,7 @@ async function nativePlay(){
       speedKmh: S.speed, intervalMs: S.rateMs, loop: S.loop
     });
     setState('playing');
-  }catch(e){ console.warn('start failed',e); flashHint('Could not start mock service.'); }
+  }catch(e){ console.warn('start failed',e); flashHint(t('hint.couldNotStart')); }
 }
 async function nativeStop(){
   try{ await FakeGps.stop(); }catch(e){ console.warn(e); }
@@ -625,7 +1005,7 @@ function applyNativeFix(f){
   logFix({ lat:f.lat, lng:f.lng, speedKmh:f.speedKmh, bearing:Math.round(f.bearing), timestamp:Date.now() });
 
   if(!f.playing && (f.progress>=0.999)){       // route complete (loop = off)
-    setState('idle'); S.pausedElapsed=0; flashHint('Route complete.');
+    setState('idle'); S.pausedElapsed=0; flashHint(t('hint.routeComplete'));
   }
 }
 function paintHudNative(f){
@@ -673,7 +1053,7 @@ function paintHud(fix){
 }
 function renderLiveCoord(fix){
   const el=document.getElementById('liveCoord');
-  if(!fix){ el.innerHTML='<span class="mut">no route</span>'; return; }
+  if(!fix){ el.innerHTML=`<span class="mut">${t('live.noRoute')}</span>`; return; }
   el.innerHTML=`<span class="mut">lat</span> ${fix.lat.toFixed(6)} &nbsp;<span class="mut">lng</span> ${fix.lng.toFixed(6)}`;
 }
 const fmtTime=s=>`${String(Math.floor(s/60)).padStart(2,'0')}:${String(Math.floor(s%60)).padStart(2,'0')}`;
@@ -718,17 +1098,17 @@ $('clear').onclick=()=>{ if(S.state!=='idle')return; S.waypoints=[]; refreshMark
 $('reverse').onclick=()=>{ if(S.state!=='idle'||S.waypoints.length<2)return; S.waypoints.reverse(); refreshMarkers(); recompute(); persist(); };
 
 $('locate').onclick=async ()=>{
-  flashHint('Locating…');
+  flashHint(t('hint.locating'));
   try{
     if(isNative && Geo){
       const p=await Geo.getCurrentPosition({enableHighAccuracy:true, timeout:8000});
-      map.setView([p.coords.latitude,p.coords.longitude],15); flashHint('Centered on your location.');
+      map.setView([p.coords.latitude,p.coords.longitude],15); flashHint(t('hint.centered'));
     } else if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
-        p=>{ map.setView([p.coords.latitude,p.coords.longitude],15); flashHint('Centered on your location.'); },
-        ()=>flashHint('Location denied.'), {enableHighAccuracy:true,timeout:8000});
-    } else { flashHint('Geolocation unavailable.'); }
-  }catch(e){ flashHint('Location denied.'); }
+        p=>{ map.setView([p.coords.latitude,p.coords.longitude],15); flashHint(t('hint.centered')); },
+        ()=>flashHint(t('hint.locationDenied')), {enableHighAccuracy:true,timeout:8000});
+    } else { flashHint(t('hint.geoUnavailable')); }
+  }catch(e){ flashHint(t('hint.locationDenied')); }
 };
 
 function syncTools(){
@@ -741,7 +1121,7 @@ function syncTools(){
 /* ---------- hint ---------- */
 let hintTimer;
 function flashHint(msg){ const h=$('hint'); h.textContent=msg; h.style.opacity='1'; clearTimeout(hintTimer); hintTimer=setTimeout(hideHint,2200); }
-function showHint(){ const h=$('hint'); h.textContent='Tap the map to drop point A, then B, then C…'; h.style.opacity='1'; }
+function showHint(){ const h=$('hint'); h.textContent=t('hint.tapMap'); h.style.opacity='1'; }
 function hideHint(){ $('hint').style.opacity='0'; }
 
 /* ---------- persistence ---------- */
@@ -796,18 +1176,24 @@ $('btnDev').onclick=async ()=>{
   if(on){ try{ await FakeGps.openDevSettings(); }catch(e){ console.warn(e);} }
   else openDevHelp();
 };
-$('btnRecheck').onclick=async ()=>{ const st=await refreshReady(); if(st.ready){ closeSetup(); flashHint('Ready — tap play.'); } };
+$('btnRecheck').onclick=async ()=>{ const st=await refreshReady(); if(st.ready){ closeSetup(); flashHint(t('hint.ready')); } };
 $('btnDismiss').onclick=closeSetup;
 $('btnAbout').onclick=async ()=>{ if(FakeGps){ try{ await FakeGps.openAboutPhone(); }catch(e){ console.warn(e);} } };
 $('btnDevRecheck').onclick=async ()=>{
   const st=await refreshReady();
-  if(st && st.devOptionsEnabled){ closeDevHelp(); flashHint('Developer options on — now pick the mock app.'); }
-  else flashHint('Still off — enable Developer options to continue.');
+  if(st && st.devOptionsEnabled){ closeDevHelp(); flashHint(t('hint.devOn')); }
+  else flashHint(t('hint.devStillOff'));
 };
 $('btnDevClose').onclick=closeDevHelp;
 
+/* ---------- language switcher + GitHub link ---------- */
+$('langSel').onchange = e => setLang(e.target.value);
+$('btnGithub').onclick = openGithub;
+
 /* ---------- boot ---------- */
+initLang();
 restore();
+applyI18n();                 // localize the static UI before first paint
 renderLiveCoord(sampleAt(0));
 paintHud();
 if(!S.waypoints.length) showHint();

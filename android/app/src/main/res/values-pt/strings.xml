@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">GPS falso ativo — em movimento</string>
+    <string name="notif_paused">GPS falso ativo — pausado</string>
+    <string name="notif_complete">GPS falso ativo — rota concluída</string>
+    <string name="notif_channel_desc">Status de reprodução do GPS falso</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Ative as opções do desenvolvedor para o Route Spoofer</string>
+    <string name="devnotif_text">O GPS falso precisa das opções do desenvolvedor do Android. Toque para ver como.</string>
+    <string name="devnotif_channel">Guia de configuração</string>
+    <string name="devnotif_channel_desc">Lembra de ativar as opções do desenvolvedor para o GPS falso</string>
+</resources>

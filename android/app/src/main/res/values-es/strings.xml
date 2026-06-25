@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">GPS simulado activo: en marcha</string>
+    <string name="notif_paused">GPS simulado activo: en pausa</string>
+    <string name="notif_complete">GPS simulado activo: ruta completada</string>
+    <string name="notif_channel_desc">Estado de reproducción del GPS simulado</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Activa las opciones de desarrollador para Route Spoofer</string>
+    <string name="devnotif_text">El GPS simulado necesita las opciones de desarrollador de Android. Toca para ver cómo.</string>
+    <string name="devnotif_channel">Guía de configuración</string>
+    <string name="devnotif_channel_desc">Recuerda activar las opciones de desarrollador para el GPS simulado</string>
+</resources>

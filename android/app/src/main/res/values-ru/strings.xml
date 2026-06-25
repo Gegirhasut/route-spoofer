@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">Фиктивный GPS активен — движение</string>
+    <string name="notif_paused">Фиктивный GPS активен — пауза</string>
+    <string name="notif_complete">Фиктивный GPS активен — маршрут завершён</string>
+    <string name="notif_channel_desc">Статус воспроизведения фиктивного GPS</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Включите режим разработчика для Route Spoofer</string>
+    <string name="devnotif_text">Фиктивному GPS нужны включённые параметры разработчика Android. Нажмите, чтобы узнать как.</string>
+    <string name="devnotif_channel">Подсказки по настройке</string>
+    <string name="devnotif_channel_desc">Напоминает включить режим разработчика для фиктивного GPS</string>
+</resources>

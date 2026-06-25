@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">GPS fictif actif — en route</string>
+    <string name="notif_paused">GPS fictif actif — en pause</string>
+    <string name="notif_complete">GPS fictif actif — trajet terminé</string>
+    <string name="notif_channel_desc">État de lecture du GPS fictif</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Activez les options développeur pour Route Spoofer</string>
+    <string name="devnotif_text">Le GPS fictif nécessite les options développeur d’Android. Touchez pour voir comment.</string>
+    <string name="devnotif_channel">Guide de configuration</string>
+    <string name="devnotif_channel_desc">Rappelle d’activer les options développeur pour le GPS fictif</string>
+</resources>

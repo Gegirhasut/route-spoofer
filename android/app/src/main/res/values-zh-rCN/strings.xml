@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">模拟 GPS 已启用 — 行驶中</string>
+    <string name="notif_paused">模拟 GPS 已启用 — 已暂停</string>
+    <string name="notif_complete">模拟 GPS 已启用 — 路线完成</string>
+    <string name="notif_channel_desc">模拟 GPS 播放状态</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">启用开发者选项以使用 Route Spoofer</string>
+    <string name="devnotif_text">模拟 GPS 需要开启 Android 开发者选项。点击查看方法。</string>
+    <string name="devnotif_channel">设置指引</string>
+    <string name="devnotif_channel_desc">提醒你为模拟 GPS 启用开发者选项</string>
+</resources>

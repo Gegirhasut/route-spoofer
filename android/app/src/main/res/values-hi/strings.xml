@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Foreground-service notification -->
+    <string name="notif_driving">मॉक GPS सक्रिय — चल रहा है</string>
+    <string name="notif_paused">मॉक GPS सक्रिय — रुका हुआ</string>
+    <string name="notif_complete">मॉक GPS सक्रिय — रूट पूरा हुआ</string>
+    <string name="notif_channel_desc">मॉक GPS प्लेबैक स्थिति</string>
+
+    <!-- Developer-options reminder notification -->
+    <string name="devnotif_title">Route Spoofer के लिए डेवलपर विकल्प चालू करें</string>
+    <string name="devnotif_text">मॉक GPS के लिए Android डेवलपर विकल्प चालू होने चाहिए। तरीका देखने के लिए टैप करें।</string>
+    <string name="devnotif_channel">सेटअप मार्गदर्शन</string>
+    <string name="devnotif_channel_desc">मॉक GPS के लिए डेवलपर विकल्प चालू करने की याद दिलाता है</string>
+</resources>
