@@ -3,53 +3,101 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 🌐 **Landing page:** <https://gegirhasut.github.io/route-spoofer/>
+&nbsp;·&nbsp; 📥 **Download (latest):** <https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk>
 
-A standalone Android app that injects a scripted, moving mock GPS location into the whole device, so any other app reads the fake route as real. Useful for testing location-based apps (e.g. driver/navigation apps) without physically moving.
+A standalone **Android** mock-GPS tool. It feeds a scripted, moving location to
+the **whole device**, so any other app — maps, navigation, driver, delivery or
+dispatch apps — reads the fake position as real. Useful for testing
+location-based apps and reproducing routes without physically moving.
+
+Android only: iOS has no public mock-location API.
 
 ## Features
 
-- Draw a multi-point route on a map (A→B→C…)
-- Set speed (km/h) and emit interval
-- Play / Pause / Stop controls
-- Loop modes: off, restart, ping-pong
-- Live telemetry HUD + emit log
-- Route saved locally
-- Native foreground service keeps emitting while the app is backgrounded
+- **Broadcasting is separate from movement.** A **GPS toggle** turns location
+  broadcasting on/off on its own; **GO / Pause** drives the cursor along the
+  route. With GPS on and a single point, the driver just stands there and
+  broadcasts that position.
+- **Route building.** Tap the map to drop points (A, B, C…), drag to move them,
+  and append new points to the end — even while driving. Any point is editable
+  at any time (no locking); editing the route behind the driver keeps the
+  current position continuous.
+- **Per-point options** (long-press a point): **wait N minutes** (auto-resume),
+  **wait until GO**, a **custom speed** for the leg ending at that point, and
+  **remove**.
+- **GO ends any wait early** — a timed wait, a wait-until-GO, or arrival — and
+  resumes immediately.
+- **End of route:** the driver stops and **keeps broadcasting** the final
+  position; only the GPS toggle stops broadcasting. **Loop modes:** off /
+  restart / ping-pong.
+- **Speed:** a live global speed slider (changeable mid-drive) plus optional
+  per-leg speed overrides.
+- **Live status label:** _Standing_ / _Driving_ / _Waiting m:ss at a point_ /
+  _Waiting for GO_ / _Arrived_.
+- **In-app Help (“?”)** with a full legend, and an **8-language UI** (EN, RU, DE,
+  ES, PT, FR, ZH, HI) with auto-detect and a manual switcher. Dark
+  instrument-panel design.
 
 ## How it works
 
-A Capacitor web UI handles route control and preview, while a native Kotlin foreground service injects the location into the Android GPS and NETWORK test providers. The app must be selected as the system mock-location app for this to work.
+A **Capacitor** web UI (HTML/JS) handles the map, route editing and preview. A
+native **Kotlin foreground service** owns the playback clock and injects the
+current position into the Android **GPS and NETWORK test providers**, so the fix
+reaches the whole system and keeps emitting while the app is backgrounded. The
+movement math and the hold/wake state machine live in a pure, unit-tested
+`RouteEngine`.
+
+For this to work, Route Spoofer must be selected as the system **mock-location
+app** in Android Developer options (see Phone setup).
+
+## Phone setup
+
+1. Enable **Developer options**: **Settings → About phone → Build number**,
+   tapped seven times.
+2. Allow installs from unknown sources and sideload the APK.
+3. **Developer options → Select mock location app → Route Spoofer.**
+4. Launch the app, grant **Location** and **Notifications**, and wait for the
+   readiness card.
+5. Turn **GPS** on to start broadcasting; press **GO** to drive.
 
 ## Build
 
 Two paths are supported — see [BUILD.md](BUILD.md) for full details.
 
-- **Cloud build (GitHub Actions):** push the repo and let the workflow build it, then download the `app-debug.apk` artifact from the run.
-- **Local build (Android Studio):** open the project with JDK 21 and the Android SDK installed, then build the debug APK.
+- **Cloud (GitHub Actions).** Every push builds the app; pushes to `main`
+  publish a rolling **`latest`** GitHub release. Download the ready APK at
+  <https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk>
+  (or grab the `app-debug.apk` artifact from a workflow run).
+- **Local (Android Studio).** Open the project with **JDK 21** and the Android
+  SDK installed, then build the debug APK.
 
-Toolchain note: this project targets the Capacitor 7 / JDK 21 toolchain.
+Toolchain: Capacitor 7 / JDK 21, targeting Android 16 (API 36).
 
 ## Development
 
-The native code is split into focused pieces: `RouteEngine` (pure movement
-math — arc length, interpolation, bearing, loop modes; no Android deps, unit
-tested), `MockLocationInjector` (the GPS + NETWORK test-provider plumbing),
-`MockLocationService` (foreground-service lifecycle + notification + playback
-clock) and `FakeGpsPlugin` (the Capacitor JS bridge).
+The native code is split into focused pieces:
 
-Run the same checks CI runs (CI runs them before building the APK):
+- `RouteEngine` — pure movement math + hold/wake state machine (arc length,
+  interpolation, bearing, dwell/GO, per-leg & live speed, loop modes,
+  hold-at-end). No Android deps; unit tested on the JVM.
+- `MockLocationInjector` — the GPS + NETWORK test-provider plumbing.
+- `MockLocationService` — foreground-service lifecycle, notification and the
+  playback clock; emits each fix to the web UI.
+- `FakeGpsPlugin` — the Capacitor JS bridge.
+
+CI runs the same quality gate **before** building the APK — Kotlin unit tests,
+ktlint, detekt and ESLint:
 
 ```bash
 # Kotlin unit tests (RouteEngine — runs on the JVM, no emulator)
 cd android && ./gradlew test
 
-# Auto-format Kotlin (ktlint)
+# Format / check Kotlin (ktlint)
 cd android && ./gradlew ktlintFormat
-# Verify formatting without changing files
 cd android && ./gradlew ktlintCheck
 
 # Static analysis (detekt); legacy findings are grandfathered in
-# android/app/config/detekt/baseline.xml, new issues fail the build
+# android/app/config/detekt/baseline.xml — new issues fail the build
 cd android && ./gradlew detekt
 
 # Lint the web UI (ESLint + eslint-plugin-html, lints the inline JS in www/)
@@ -57,17 +105,9 @@ npm run lint
 npm run lint:fix   # safe auto-fixes only
 ```
 
-## Phone setup
-
-1. Enable **Developer options**: tap **Settings → About phone → Build number** seven times.
-2. Allow installing from unknown sources and sideload the APK.
-3. Go to **Developer options → Select mock location app → Route Spoofer**.
-4. Launch the app and grant **Location** and **Notifications** permissions.
-5. Wait for the readiness card, then press **Play**.
-
 ## Localization
 
-The UI and the service notification are available in 8 languages:
+The UI and the service notification ship in **8 languages**:
 
 - English (source / fallback)
 - Русский (Russian)
@@ -78,15 +118,15 @@ The UI and the service notification are available in 8 languages:
 - 中文 (Simplified Chinese)
 - हिन्दी (Hindi)
 
-The language auto-detects from the system locale on first launch and can be changed
-anytime from the **Language** selector at the bottom of the control deck (choose
-**Auto** to follow the system again). English is the source of truth and the fallback
-for any missing string. Chinese and Hindi are machine translations pending native
-review; corrections are welcome.
+The language auto-detects from the system locale on first launch and can be
+changed any time from the **Language** selector (choose **Auto** to follow the
+system again). English is the source of truth and the fallback for any missing
+string. **Chinese and Hindi are machine-drafted, pending native review** —
+corrections are welcome.
 
 ## Platform support
 
-Android only. iOS is not supported, as it has no public mock-location API.
+**Android only.** iOS is not supported, as it has no public mock-location API.
 
 ## License
 
