@@ -54,54 +54,112 @@ class FakeGpsPlugin : Plugin() {
         super.handleOnDestroy()
     }
 
-    // ----------------------------------------------------------------- playback
+    // ----------------------------------------------------------------- broadcasting
 
+    /** Turn GPS emission ON (foreground service). The only thing that starts emitting. */
     @PluginMethod
-    fun start(call: PluginCall) {
+    fun startGps(call: PluginCall) {
+        startService(serviceIntent(MockLocationService.ACTION_START_GPS))
+        call.resolve()
+    }
+
+    /** Turn GPS emission OFF. The only thing that stops emitting. */
+    @PluginMethod
+    fun stopGps(call: PluginCall) {
+        startService(serviceIntent(MockLocationService.ACTION_STOP_GPS))
+        call.resolve()
+    }
+
+    /** Define / replace the route (waypoints carry optional dwell + per-leg speed). */
+    @PluginMethod
+    fun setRoute(call: PluginCall) {
         val wps: JSONArray = call.getArray("waypoints") ?: JSONArray()
         val intent =
-            serviceIntent(MockLocationService.ACTION_START).apply {
+            serviceIntent(MockLocationService.ACTION_SET_ROUTE).apply {
                 putExtra(MockLocationService.EXTRA_WAYPOINTS, wps.toString())
-                putExtra(MockLocationService.EXTRA_SPEED, call.getDouble("speedKmh") ?: 40.0)
-                putExtra(MockLocationService.EXTRA_INTERVAL, (call.getInt("intervalMs") ?: 1000).toLong())
+                putExtra(MockLocationService.EXTRA_SPEED, call.getDouble("speedKmh") ?: DEFAULT_SPEED)
+                putExtra(MockLocationService.EXTRA_INTERVAL, (call.getInt("intervalMs") ?: DEFAULT_INTERVAL).toLong())
                 putExtra(MockLocationService.EXTRA_LOOP, call.getString("loop") ?: "off")
             }
         startService(intent)
         call.resolve()
     }
 
+    // ----------------------------------------------------------------- movement
+
+    /** Drive the cursor along the route; ends any hold immediately (GO). */
+    @PluginMethod
+    fun go(call: PluginCall) {
+        startService(serviceIntent(MockLocationService.ACTION_GO))
+        call.resolve()
+    }
+
+    /** Stand still and keep broadcasting until GO (manual hold). */
     @PluginMethod
     fun pause(call: PluginCall) {
         startService(serviceIntent(MockLocationService.ACTION_PAUSE))
         call.resolve()
     }
 
-    @PluginMethod
-    fun resume(call: PluginCall) {
-        startService(serviceIntent(MockLocationService.ACTION_RESUME))
-        call.resolve()
-    }
-
+    /** Reset the cursor to the route start. Does NOT stop GPS. */
     @PluginMethod
     fun stop(call: PluginCall) {
         startService(serviceIntent(MockLocationService.ACTION_STOP))
         call.resolve()
     }
 
+    /** Live base-speed change (applies mid-leg). */
     @PluginMethod
     fun setSpeed(call: PluginCall) {
-        val intent =
+        startService(
             serviceIntent(MockLocationService.ACTION_SET_SPEED)
-                .putExtra(MockLocationService.EXTRA_SPEED, call.getDouble("speedKmh") ?: 40.0)
-        startService(intent)
+                .putExtra(MockLocationService.EXTRA_SPEED, call.getDouble("speedKmh") ?: DEFAULT_SPEED),
+        )
         call.resolve()
     }
 
     @PluginMethod
     fun setInterval(call: PluginCall) {
-        val intent =
+        startService(
             serviceIntent(MockLocationService.ACTION_SET_INTERVAL)
-                .putExtra(MockLocationService.EXTRA_INTERVAL, (call.getInt("intervalMs") ?: 1000).toLong())
+                .putExtra(MockLocationService.EXTRA_INTERVAL, (call.getInt("intervalMs") ?: DEFAULT_INTERVAL).toLong()),
+        )
+        call.resolve()
+    }
+
+    @PluginMethod
+    fun setLoop(call: PluginCall) {
+        startService(
+            serviceIntent(MockLocationService.ACTION_SET_LOOP)
+                .putExtra(MockLocationService.EXTRA_LOOP, call.getString("loop") ?: "off"),
+        )
+        call.resolve()
+    }
+
+    /** Append a waypoint to the end of the route (live, beyond the cursor). */
+    @PluginMethod
+    fun appendWaypoint(call: PluginCall) {
+        startService(
+            serviceIntent(MockLocationService.ACTION_APPEND_WAYPOINT)
+                .putExtra(MockLocationService.EXTRA_LAT, call.getDouble("lat") ?: 0.0)
+                .putExtra(MockLocationService.EXTRA_LNG, call.getDouble("lng") ?: 0.0),
+        )
+        call.resolve()
+    }
+
+    /** Edit a future waypoint's dwell and/or per-leg speed. */
+    @PluginMethod
+    fun setWaypoint(call: PluginCall) {
+        val intent =
+            serviceIntent(MockLocationService.ACTION_SET_WAYPOINT)
+                .putExtra(MockLocationService.EXTRA_INDEX, call.getInt("index") ?: -1)
+        call.getString("dwell")?.let {
+            intent.putExtra(MockLocationService.EXTRA_DWELL, it)
+            intent.putExtra(MockLocationService.EXTRA_DWELL_MS, (call.getInt("dwellMs") ?: 0).toLong())
+        }
+        if (call.data.has("legSpeedKmh")) {
+            intent.putExtra(MockLocationService.EXTRA_LEG_SPEED, call.getDouble("legSpeedKmh") ?: -1.0)
+        }
         startService(intent)
         call.resolve()
     }
@@ -275,11 +333,12 @@ class FakeGpsPlugin : Plugin() {
 
     private fun startService(intent: Intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
-            intent.action == MockLocationService.ACTION_START
+            intent.action == MockLocationService.ACTION_START_GPS
         ) {
+            // Only turning GPS ON promotes the service to the foreground; every
+            // other command targets the already-running service.
             context.startForegroundService(intent)
         } else {
-            // pause/resume/stop/setX target an already-running foreground service
             context.startService(intent)
         }
     }
@@ -288,5 +347,7 @@ class FakeGpsPlugin : Plugin() {
         private const val PROBE_PROVIDER = "route-spoofer-probe"
         private const val DEV_CHANNEL_ID = "route_spoofer_devopts"
         private const val DEV_NOTIF_ID = 4712
+        private const val DEFAULT_SPEED = 40.0
+        private const val DEFAULT_INTERVAL = 1000
     }
 }

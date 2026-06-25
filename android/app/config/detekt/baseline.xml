@@ -2,17 +2,10 @@
 <SmellBaseline>
   <ManuallySuppressedIssues></ManuallySuppressedIssues>
   <CurrentIssues>
-    <ID>MagicNumber:FakeGpsPlugin.kt$FakeGpsPlugin$1000</ID>
-    <ID>MagicNumber:FakeGpsPlugin.kt$FakeGpsPlugin$40.0</ID>
     <ID>MagicNumber:MockLocationInjector.kt$MockLocationInjector$3f</ID>
     <ID>MagicNumber:MockLocationInjector.kt$MockLocationInjector$4f</ID>
     <ID>MagicNumber:MockLocationService.kt$MockLocationService$1000</ID>
-    <ID>MagicNumber:MockLocationService.kt$MockLocationService$1000.0</ID>
-    <ID>MagicNumber:MockLocationService.kt$MockLocationService$1000L</ID>
-    <ID>MagicNumber:MockLocationService.kt$MockLocationService$1e6</ID>
-    <ID>MagicNumber:MockLocationService.kt$MockLocationService$3.6</ID>
     <ID>MagicNumber:MockLocationService.kt$MockLocationService$40.0</ID>
-    <ID>MagicNumber:MockLocationService.kt$MockLocationService$50L</ID>
     <ID>MagicNumber:RouteEngine.kt$RouteEngine.Companion$360</ID>
     <ID>SwallowedException:FakeGpsPlugin.kt$FakeGpsPlugin$e: Exception</ID>
     <ID>SwallowedException:FakeGpsPlugin.kt$FakeGpsPlugin$e: SecurityException</ID>

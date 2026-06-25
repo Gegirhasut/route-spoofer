@@ -19,32 +19,27 @@ import androidx.core.app.ServiceCompat
 import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.max
-import kotlin.math.min
 
 /**
- * Foreground service that OWNS the route-playback clock and the OS mock-location
- * injection. It interpolates a position along the waypoint polyline by
- * elapsed-time x speed (via [RouteEngine]) and pushes a fix into the GPS (+
- * NETWORK) test providers (via [MockLocationInjector]) every `intervalMs`.
- * Because it runs as a `location`-typed foreground service it keeps injecting
- * while the app (and its WebView) are backgrounded.
+ * Foreground service that owns the playback CLOCK and the OS mock-location
+ * injection. Broadcasting and movement are independent:
  *
- * Every injected fix is also streamed back to the JS layer through [fixListener]
- * so the web preview marker / HUD / log follow this single clock.
+ *  - GPS ON/OFF (start/stop) is the only thing that starts/stops emission. While
+ *    ON the clock ticks every `intervalMs`, steps [RouteEngine] and emits the
+ *    current position — whether the driver is standing, driving, waiting or
+ *    arrived (speed is 0 unless actually driving).
+ *  - GO / Pause / Stop / live speed / dwell / append only move the cursor or
+ *    change how it moves; they never start or stop emission.
+ *
+ * [RouteEngine] is the pure source of geometry + hold/wake state; the injector is
+ * unchanged. Every emitted fix is streamed back to JS via [fixListener].
  */
 class MockLocationService : Service() {
-    // ---- route ----
     private var engine: RouteEngine = RouteEngine(emptyList())
 
-    // ---- playback params ----
     private var speedKmh: Double = 40.0
     private var intervalMs: Long = 1000
-    private var loop: String = "off"
-
-    // ---- playback state ----
-    private var traveled: Double = 0.0
-    private var dir: Int = 1
-    private var playing: Boolean = false
+    private var gpsOn: Boolean = false
     private var elapsedMs: Long = 0
     private var lastTick: Long = 0
 
@@ -56,9 +51,9 @@ class MockLocationService : Service() {
     private val tickRunnable =
         object : Runnable {
             override fun run() {
-                if (!playing) return
+                if (!gpsOn) return
                 tick()
-                if (playing) handler.postDelayed(this, intervalMs)
+                if (gpsOn) handler.postDelayed(this, intervalMs)
             }
         }
 
@@ -77,71 +72,49 @@ class MockLocationService : Service() {
         startId: Int,
     ): Int {
         when (intent?.action) {
-            ACTION_START -> handleStart(intent)
-            ACTION_PAUSE -> handlePause()
-            ACTION_RESUME -> handleResume()
-            ACTION_STOP -> {
-                handleStop()
-                return START_NOT_STICKY
-            }
+            ACTION_START_GPS -> startGps()
+            ACTION_STOP_GPS -> stopGps()
+            ACTION_SET_ROUTE -> setRoute(intent)
+            ACTION_GO -> engine.go()
+            ACTION_PAUSE -> engine.pause()
+            ACTION_STOP -> engine.stop()
             ACTION_SET_SPEED -> speedKmh = intent.getDoubleExtra(EXTRA_SPEED, speedKmh)
-            ACTION_SET_INTERVAL -> intervalMs = max(50L, intent.getLongExtra(EXTRA_INTERVAL, intervalMs))
+            ACTION_SET_INTERVAL -> intervalMs = max(MIN_INTERVAL_MS, intent.getLongExtra(EXTRA_INTERVAL, intervalMs))
+            ACTION_SET_LOOP -> engine.loop = LoopMode.fromId(intent.getStringExtra(EXTRA_LOOP))
+            ACTION_APPEND_WAYPOINT ->
+                engine.appendPoint(LatLng(intent.getDoubleExtra(EXTRA_LAT, 0.0), intent.getDoubleExtra(EXTRA_LNG, 0.0)))
+            ACTION_SET_WAYPOINT -> editWaypoint(intent)
         }
+        // Push an immediate snapshot so the UI reflects commands without waiting a tick.
+        if (gpsOn) emit(engine.state(speedKmh)) else fixListener?.invoke(emitJson(engine.state(speedKmh)))
         return START_STICKY
     }
 
-    // ---------------------------------------------------------------- start/stop
+    // ---------------------------------------------------------------- GPS toggle
 
-    private fun handleStart(intent: Intent) {
-        parseRoute(intent.getStringExtra(EXTRA_WAYPOINTS))
-        speedKmh = intent.getDoubleExtra(EXTRA_SPEED, 40.0)
-        intervalMs = max(50L, intent.getLongExtra(EXTRA_INTERVAL, 1000L))
-        loop = intent.getStringExtra(EXTRA_LOOP) ?: "off"
-
-        traveled = 0.0
-        dir = 1
-        elapsedMs = 0
-        playing = true
-
-        startInForeground() // notification text: notif_driving
+    private fun startGps() {
+        if (gpsOn) return
+        gpsOn = true
+        startInForeground()
         injector.setup()
-
         lastTick = SystemClock.elapsedRealtime()
-        // emit an immediate first fix, then run on the interval clock
         tick()
         handler.removeCallbacks(tickRunnable)
         handler.postDelayed(tickRunnable, intervalMs)
     }
 
-    private fun handlePause() {
-        if (!playing) return
-        playing = false
-        handler.removeCallbacks(tickRunnable)
-        emitFix(engine.sampleAt(traveled), false)
-        updateNotification(R.string.notif_paused)
-    }
-
-    private fun handleResume() {
-        if (playing || engine.waypoints.isEmpty()) return
-        playing = true
-        lastTick = SystemClock.elapsedRealtime()
-        updateNotification(R.string.notif_driving)
-        handler.removeCallbacks(tickRunnable)
-        handler.post(tickRunnable)
-    }
-
-    private fun handleStop() {
-        playing = false
+    private fun stopGps() {
+        if (!gpsOn) return
+        gpsOn = false
         handler.removeCallbacks(tickRunnable)
         injector.teardown()
-        traveled = 0.0
-        emitFix(engine.sampleAt(0.0), false)
+        // Stop emitting but keep the service (and the cursor) alive.
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-        stopSelf()
+        emit(engine.state(speedKmh)) // a final, not-emitting snapshot for the UI
     }
 
     override fun onDestroy() {
-        playing = false
+        gpsOn = false
         handler.removeCallbacks(tickRunnable)
         injector.teardown()
         thread.quitSafely()
@@ -152,95 +125,96 @@ class MockLocationService : Service() {
 
     private fun tick() {
         val now = SystemClock.elapsedRealtime()
-        val dt = (now - lastTick) / 1000.0
-        if (playing) elapsedMs += (now - lastTick)
+        val dtMs = now - lastTick
         lastTick = now
-
-        val delta = (speedKmh / 3.6) * dt // metres this step (m/s x s)
-        val adv = engine.advance(traveled, dir, delta, LoopMode.fromId(loop))
-        traveled = adv.traveled
-        dir = adv.dir
-        if (adv.atEnd) {
-            finishAtEnd()
-            return
-        }
-
-        val fix = engine.sampleAt(traveled)
-        injectLocation(fix)
-        emitFix(fix, true)
-    }
-
-    private fun finishAtEnd() {
-        val fix = engine.sampleAt(engine.totalDistance)
-        injectLocation(fix)
-        emitFix(fix, false)
-        playing = false
-        handler.removeCallbacks(tickRunnable)
-        updateNotification(R.string.notif_complete)
+        val st = engine.step(dtMs, speedKmh)
+        if (st.phase == Phase.DRIVING) elapsedMs += dtMs
+        injector.inject(Fix(st.lat, st.lng, st.bearing, st.seg), st.speedKmh / MS_PER_KMH)
+        emit(st)
+        updateNotification(notifTextFor(st.phase))
     }
 
     // ---------------------------------------------------------------- route input
 
-    private fun parseRoute(json: String?) {
-        val list = ArrayList<LatLng>()
+    private fun setRoute(intent: Intent) {
+        engine = RouteEngine(parseWaypoints(intent.getStringExtra(EXTRA_WAYPOINTS)))
+        engine.loop = LoopMode.fromId(intent.getStringExtra(EXTRA_LOOP))
+        speedKmh = intent.getDoubleExtra(EXTRA_SPEED, speedKmh)
+        intervalMs = max(MIN_INTERVAL_MS, intent.getLongExtra(EXTRA_INTERVAL, intervalMs))
+        elapsedMs = 0
+    }
+
+    private fun editWaypoint(intent: Intent) {
+        val i = intent.getIntExtra(EXTRA_INDEX, -1)
+        if (i < 0) return
+        if (intent.hasExtra(EXTRA_DWELL)) {
+            engine.setWaypointDwell(i, DwellKind.fromId(intent.getStringExtra(EXTRA_DWELL)), intent.getLongExtra(EXTRA_DWELL_MS, 0L))
+        }
+        if (intent.hasExtra(EXTRA_LEG_SPEED)) {
+            val s = intent.getDoubleExtra(EXTRA_LEG_SPEED, -1.0)
+            engine.setLegSpeed(i, if (s > 0) s else null)
+        }
+    }
+
+    private fun parseWaypoints(json: String?): List<Waypoint> {
+        val list = ArrayList<Waypoint>()
         if (json != null) {
             val arr = JSONArray(json)
             for (i in 0 until arr.length()) {
                 val o = arr.getJSONObject(i)
-                list.add(LatLng(o.getDouble("lat"), o.getDouble("lng")))
+                val legSpeed = if (o.has("legSpeedKmh") && !o.isNull("legSpeedKmh")) o.getDouble("legSpeedKmh") else null
+                list.add(
+                    Waypoint(
+                        pos = LatLng(o.getDouble("lat"), o.getDouble("lng")),
+                        dwell = DwellKind.fromId(o.optString("dwell", "none")),
+                        dwellMs = o.optLong("dwellMs", 0L),
+                        legSpeedKmh = legSpeed,
+                    ),
+                )
             }
         }
-        engine = RouteEngine(list)
-    }
-
-    // ---------------------------------------------------------------- injection
-
-    private fun injectLocation(fix: Fix) {
-        if (engine.waypoints.isEmpty()) return
-        val speedMs = (if (playing) speedKmh else 0.0) / 3.6
-        injector.inject(fix, speedMs)
+        return list
     }
 
     // ---------------------------------------------------------------- emit to JS
 
-    private fun emitFix(
-        fix: Fix,
-        isPlaying: Boolean,
-    ) {
-        val progress = if (engine.totalDistance > 0) traveled / engine.totalDistance else 0.0
-        val json =
-            JSONObject().apply {
-                put("lat", round6(fix.lat))
-                put("lng", round6(fix.lng))
-                put("bearing", fix.bearing)
-                put("speedKmh", if (isPlaying) speedKmh else 0.0)
-                put("progress", max(0.0, min(1.0, progress)))
-                put("segIndex", fix.seg)
-                put("elapsedMs", elapsedMs)
-                put("playing", isPlaying)
-            }
-        fixListener?.invoke(json)
-    }
+    private fun emit(st: DriveState) = fixListener?.invoke(emitJson(st))
 
-    private fun round6(v: Double): Double = Math.round(v * 1e6) / 1e6
+    private fun emitJson(st: DriveState): JSONObject =
+        JSONObject().apply {
+            put("lat", round6(st.lat))
+            put("lng", round6(st.lng))
+            put("bearing", st.bearing)
+            put("speedKmh", st.speedKmh)
+            put("progress", st.progress)
+            put("segIndex", st.seg)
+            put("traveled", st.traveled)
+            put("phase", st.phase.name.lowercase())
+            put("holdRemainingMs", st.holdRemainingMs)
+            put("holdWaypoint", st.holdWaypoint)
+            put("lockedThrough", st.lockedThrough)
+            put("elapsedMs", elapsedMs)
+            put("gpsOn", gpsOn)
+            put("driving", st.phase == Phase.DRIVING)
+        }
+
+    private fun round6(v: Double): Double = Math.round(v * ROUND_SCALE) / ROUND_SCALE
 
     // ---------------------------------------------------------------- foreground
+
+    private fun notifTextFor(phase: Phase): Int =
+        when (phase) {
+            Phase.DRIVING, Phase.STANDING -> R.string.notif_driving
+            Phase.WAITING_TIMED, Phase.WAITING_GO -> R.string.notif_paused
+            Phase.ARRIVED -> R.string.notif_complete
+        }
 
     private fun startInForeground() {
         val notif = buildNotification(R.string.notif_driving)
         val sdk = Build.VERSION.SDK_INT
         when {
-            // API 34+ enforces that the type passed here is declared in the
-            // manifest; the service is registered as "specialUse".
             sdk >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE ->
-                ServiceCompat.startForeground(
-                    this,
-                    NOTIF_ID,
-                    notif,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
-                )
-            // API 29–33 do not know the "specialUse" type, so start with no
-            // enforced type (passing a type the manifest doesn't list throws).
+                ServiceCompat.startForeground(this, NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
             sdk >= Build.VERSION_CODES.Q ->
                 ServiceCompat.startForeground(this, NOTIF_ID, notif, 0)
             else -> startForeground(NOTIF_ID, notif)
@@ -258,7 +232,7 @@ class MockLocationService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.app_name)) // "Route Spoofer" — brand, not localized
+            .setContentTitle(getString(R.string.app_name))
             .setContentText(getString(textRes))
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
@@ -268,6 +242,7 @@ class MockLocationService : Service() {
     }
 
     private fun updateNotification(textRes: Int) {
+        if (!gpsOn) return
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         nm.notify(NOTIF_ID, buildNotification(textRes))
     }
@@ -286,20 +261,34 @@ class MockLocationService : Service() {
     }
 
     companion object {
-        const val ACTION_START = "com.routespoofer.app.START"
+        const val ACTION_START_GPS = "com.routespoofer.app.START_GPS"
+        const val ACTION_STOP_GPS = "com.routespoofer.app.STOP_GPS"
+        const val ACTION_SET_ROUTE = "com.routespoofer.app.SET_ROUTE"
+        const val ACTION_GO = "com.routespoofer.app.GO"
         const val ACTION_PAUSE = "com.routespoofer.app.PAUSE"
-        const val ACTION_RESUME = "com.routespoofer.app.RESUME"
         const val ACTION_STOP = "com.routespoofer.app.STOP"
         const val ACTION_SET_SPEED = "com.routespoofer.app.SET_SPEED"
         const val ACTION_SET_INTERVAL = "com.routespoofer.app.SET_INTERVAL"
+        const val ACTION_SET_LOOP = "com.routespoofer.app.SET_LOOP"
+        const val ACTION_APPEND_WAYPOINT = "com.routespoofer.app.APPEND_WAYPOINT"
+        const val ACTION_SET_WAYPOINT = "com.routespoofer.app.SET_WAYPOINT"
 
-        const val EXTRA_WAYPOINTS = "waypoints" // JSON array string: [{lat,lng}, ...]
+        const val EXTRA_WAYPOINTS = "waypoints"
         const val EXTRA_SPEED = "speedKmh"
         const val EXTRA_INTERVAL = "intervalMs"
-        const val EXTRA_LOOP = "loop" // "off" | "restart" | "pingpong"
+        const val EXTRA_LOOP = "loop"
+        const val EXTRA_LAT = "lat"
+        const val EXTRA_LNG = "lng"
+        const val EXTRA_INDEX = "index"
+        const val EXTRA_DWELL = "dwell"
+        const val EXTRA_DWELL_MS = "dwellMs"
+        const val EXTRA_LEG_SPEED = "legSpeedKmh"
 
         private const val CHANNEL_ID = "route_spoofer_mock"
         private const val NOTIF_ID = 4711
+        private const val MIN_INTERVAL_MS = 50L
+        private const val MS_PER_KMH = 3.6
+        private const val ROUND_SCALE = 1e6
 
         /** Set by the FakeGps plugin; receives every emitted fix as JSON. */
         @Volatile
