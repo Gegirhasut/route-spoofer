@@ -85,7 +85,7 @@
                 <h1 class="hero-title">Route Spoofer</h1>
                 <p class="hero-tagline" data-i18n="hero.tagline">Android mock-GPS route player for testing location-based apps — broadcasts a scripted, moving location to your whole device.</p>
                 <div class="cta-row">
-                    <a class="btn btn-primary" href="https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk" rel="noopener" data-i18n="hero.download">Download APK</a>
+                    <button type="button" class="btn btn-primary" data-modal-open="closed-test" data-i18n="hero.download">Get the app</button>
                     <a class="btn btn-primary" href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank" data-i18n="hero.cta">View on GitHub</a>
                     <a class="btn btn-ghost" href="#setup" data-i18n="hero.cta2">How to use</a>
                 </div>
@@ -333,11 +333,11 @@
                 </div>
             </div>
 
-            <h3 class="sub center" data-i18n="setup.build_title">Get the APK</h3>
+            <h3 class="sub center" data-i18n="setup.build_title">Build from source</h3>
             <div class="cards cards-2">
                                     <article class="card">
                         <h3 data-i18n="setup.builds.0.title">Cloud build</h3>
-                        <p data-i18n="setup.builds.0.text">GitHub Actions builds the app on every push and publishes a rolling “latest” release — download the ready APK straight from there.</p>
+                        <p data-i18n="setup.builds.0.text">GitHub Actions builds the app from source on every push, so every commit is verified to compile.</p>
                     </article>
                                     <article class="card">
                         <h3 data-i18n="setup.builds.1.title">Local build</h3>
@@ -370,6 +370,22 @@
 
 </main>
 
+<!-- Closed-testing modal (opened by the hero "Get the app" button) -->
+<div class="modal" id="closed-test" hidden>
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="closed-test-title">
+        <button type="button" class="modal-x" data-modal-close
+                aria-label="Close" data-i18n-aria="hero.ct_close">&times;</button>
+        <h2 class="modal-title" id="closed-test-title" data-i18n="hero.ct_title">Currently in closed testing</h2>
+        <p class="modal-body" data-i18n="hero.ct_body">Route Spoofer is going through a Google Play closed test right now. A public release on Google Play is coming soon — check back shortly. Thanks for your interest!</p>
+        <div class="modal-actions">
+            <a class="modal-link" href="https://github.com/Gegirhasut/route-spoofer" rel="noopener" target="_blank"
+               data-i18n="hero.ct_source">View source (MIT)</a>
+            <button type="button" class="btn btn-primary" data-modal-close
+                    data-i18n="hero.ct_close">Close</button>
+        </div>
+    </div>
+</div>
 
 <footer class="site-footer">
     <div class="container">
