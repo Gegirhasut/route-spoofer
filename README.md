@@ -4,7 +4,8 @@
 [![Beta-tested via QAProvider](https://img.shields.io/badge/Beta--tested%20via-QAProvider-38b6e6)](https://qaprovider.com/)
 
 🌐 **Landing page:** <https://gegirhasut.github.io/route-spoofer/>
-&nbsp;·&nbsp; 📥 **Download (latest):** <https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk>
+
+> 🧪 **Currently in closed testing on Google Play.** A public release is coming soon. Building from source is still possible for developers (see below).
 
 **Android mock-GPS route player for testing location-based apps — broadcasts a
 scripted, moving location to your whole device.** Any other app — maps,
@@ -85,10 +86,9 @@ app** in Android Developer options (see Phone setup).
 
 Two paths are supported — see [BUILD.md](BUILD.md) for full details.
 
-- **Cloud (GitHub Actions).** Every push builds the app; pushes to `main`
-  publish a rolling **`latest`** GitHub release. Download the ready APK at
-  <https://github.com/Gegirhasut/route-spoofer/releases/download/latest/route-spoofer.apk>
-  (or grab the `app-debug.apk` artifact from a workflow run).
+- **Cloud (GitHub Actions).** Every push builds the app and runs the full
+  quality gate; developers can grab the `app-debug.apk` artifact from a workflow
+  run.
 - **Local (Android Studio).** Open the project with **JDK 21** and the Android
   SDK installed, then build the debug APK.
 
