@@ -1843,8 +1843,9 @@ function setChecking(btn, on){
 }
 function showMsg(id, text){
   const el=$(id); if(!el || !text) return;
+  clearTimeout(el._t); clearTimeout(el._th);
   el.textContent=text; el.hidden=false; el.style.opacity='1';
-  clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.hidden=true; }, 220); }, 4200);
+  el._t=setTimeout(()=>{ el.style.opacity='0'; el._th=setTimeout(()=>{ el.hidden=true; }, 220); }, 4200);
 }
 function pendingMsg(st){
   if(!st) return t('setup.stillChecking');
