@@ -320,6 +320,32 @@ class FakeGpsPlugin : Plugin() {
         call.resolve()
     }
 
+    /**
+     * Open an external URL via a guarded ACTION_VIEW. The intent dispatch is
+     * wrapped so a missing/disabled browser (ActivityNotFoundException) can
+     * never crash the app — it resolves { opened: false } and the web layer
+     * falls back to copy-to-clipboard instead.
+     */
+    @PluginMethod
+    fun openUrl(call: PluginCall) {
+        val url = call.getString("url")
+        if (url.isNullOrBlank()) {
+            call.resolve(JSObject().put("opened", false))
+            return
+        }
+        val opened =
+            try {
+                val intent =
+                    Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        call.resolve(JSObject().put("opened", opened))
+    }
+
     // ----------------------------------------------------------------- helpers
 
     private fun isDevOptionsOn(): Boolean =
