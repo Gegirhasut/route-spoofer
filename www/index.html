@@ -366,13 +366,13 @@
   #searchInput::-webkit-search-cancel-button{filter:invert(.6)}
 
   /* ---------- setup / readiness card ---------- */
-  #setup,#devhelp{
+  #setup,#devhelp,#mockhelp{
     position:absolute; z-index:700; left:0; right:0; top:0; bottom:0;
     display:none; align-items:center; justify-content:center; padding:20px;
     background:rgba(8,11,15,.72); backdrop-filter:blur(3px);
   }
-  #devhelp{z-index:710}
-  #setup.show,#devhelp.show{display:flex}
+  #devhelp,#mockhelp{z-index:710}
+  #setup.show,#devhelp.show,#mockhelp.show{display:flex}
   .setup-card{
     width:100%; max-width:380px; background:var(--panel); border:1px solid var(--line-2);
     border-radius:16px; padding:18px 18px 16px; box-shadow:0 18px 60px rgba(0,0,0,.6);
@@ -394,7 +394,24 @@
     background:var(--panel-2); color:var(--text); transition:.12s;
   }
   .setup-actions button.primary{background:var(--signal); color:var(--signal-ink); border-color:transparent}
+  .setup-actions button:disabled{cursor:default}
+  .setup-actions button:disabled:active{transform:none}
+  .setup-actions button.granted{background:rgba(61,220,132,.12); color:var(--ok); border-color:transparent; opacity:1}
+  .setup-actions button.is-checking{opacity:.7; cursor:progress}
   .setup-actions button:active{transform:scale(.98)}
+  /* inline, overlay-safe status line for Re-check feedback */
+  .setup-msg{margin-top:12px; padding:9px 11px; border-radius:9px; font:500 11.5px/1.45 var(--sans);
+    background:rgba(245,166,35,.10); border:1px solid rgba(245,166,35,.35); color:var(--text); transition:opacity .2s}
+  .setup-msg[hidden]{display:none}
+  /* tappable checklist row (step 2 → instructions) */
+  .check.tappable{cursor:pointer; border-radius:8px; margin:0 -6px; padding-left:6px; padding-right:6px}
+  .check.tappable:hover{background:var(--panel-2)}
+  .check .go{flex:none; align-self:center; color:var(--muted); font:700 14px/1 var(--sans); margin-top:1px}
+  /* shared mock-location step list (info "?" page + step-2 modal) */
+  .mock-steps{margin:6px 0 2px; padding-left:20px; display:flex; flex-direction:column; gap:7px}
+  .mock-steps li{font:500 12px/1.45 var(--sans); color:var(--text)}
+  .mock-steps li small{display:block; color:var(--muted); font:500 11px/1.4 var(--sans); margin-top:2px}
+  .mock-note{margin:8px 0 0; font:500 11px/1.4 var(--sans); color:var(--muted)}
 
   /* numbered how-to steps (dev-options helper) */
   .dev-steps{margin:6px 0 2px; padding:0; list-style:none; counter-reset:step}
@@ -541,7 +558,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.0</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.0.2</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -554,10 +571,12 @@
         <div class="ic">1</div>
         <div class="body"><b data-i18n="setup.check1title">Location &amp; notification permission</b><span data-i18n="setup.check1desc">Allow access so the service can run.</span></div>
       </div>
-      <div class="check" id="chkMock">
+      <div class="check tappable" id="chkMock" role="button" tabindex="0" data-i18n-title="setup.check2help" title="How to select the mock location app">
         <div class="ic">2</div>
         <div class="body"><b data-i18n="setup.check2title">Selected as mock location app</b><span data-i18n="setup.check2desc">Developer options → “Select mock location app” → Route Spoofer.</span></div>
+        <div class="go" aria-hidden="true">›</div>
       </div>
+      <div class="setup-msg" id="setupMsg" hidden></div>
       <div class="setup-actions">
         <button class="primary" id="btnGrant" data-i18n="setup.grant">Grant permissions</button>
         <button id="btnDev" data-i18n="setup.openDev">Open Developer options</button>
@@ -579,6 +598,7 @@
         <li><span data-i18n="dev.step4">Come back here and tap Re-check</span></li>
       </ol>
       <p class="dev-note" data-i18n="dev.note">The exact path varies slightly by phone brand.</p>
+      <div class="setup-msg" id="devMsg" hidden></div>
       <div class="setup-actions">
         <button class="primary" id="btnAbout" data-i18n="dev.openAbout">Open About phone</button>
         <button id="btnDevRecheck" data-i18n="dev.recheck">Re-check</button>
@@ -586,6 +606,35 @@
       </div>
     </div>
   </div>
+
+  <!-- mock-location instructions (native only). Body is rendered from #mockStepsTpl,
+       the SINGLE shared source also used by the "?" info page (help "Phone setup"). -->
+  <div id="mockhelp">
+    <div class="setup-card">
+      <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> <span data-i18n="mock.title">Select the mock location app</span></h2>
+      <div id="mockHelpSteps"></div>
+      <div class="setup-msg" id="mockMsg" hidden></div>
+      <div class="setup-actions">
+        <button class="primary" id="btnMockDev" data-i18n="setup.openDev">Open Developer options</button>
+        <button id="btnMockRecheck" data-i18n="setup.recheck">Re-check</button>
+        <button id="btnMockClose" style="color:var(--muted)" data-i18n="dev.close">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SINGLE shared source for the mock-location steps. Cloned (once) into both
+       #mockHelpSteps (the step-2 modal) and #helpMockSteps (the "?" info page).
+       Translation is handled by applyI18n() via the data-i18n attributes. -->
+  <template id="mockStepsTpl">
+    <p data-i18n="mock.intro">Point Android at Route Spoofer as its mock location source — a one-time setting.</p>
+    <ol class="mock-steps">
+      <li><span data-i18n="mock.step1">Enable Developer options: Settings → About phone → tap Build number 7 times.</span><small data-i18n="mock.step1sub">On Samsung: → Software information.</small></li>
+      <li data-i18n="mock.step2">Open Settings → System → Developer options.</li>
+      <li data-i18n="mock.step3">Tap “Select mock location app”.</li>
+      <li data-i18n="mock.step4">Choose Route Spoofer.</li>
+    </ol>
+    <p class="mock-note" data-i18n="mock.note">The exact path varies slightly by phone brand.</p>
+  </template>
 
   <!-- waypoint long-press menu (dwell / per-leg speed / remove) -->
   <div id="wpMenu" class="wpmenu" hidden>
@@ -687,6 +736,7 @@
         <section>
           <h3 data-i18n="help.s9.t">Phone setup</h3>
           <ul><li data-i18n="help.s9.a">Mock GPS needs Route Spoofer selected as the mock location app.</li></ul>
+          <div id="helpMockSteps"></div>
           <button id="helpOpenSetup" class="help-action" data-i18n="help.openSetup">Open setup</button>
         </section>
       </div>
@@ -787,6 +837,21 @@ const I18N = {
     'setup.check2desc':'Developer options → “Select mock location app” → Route Spoofer.',
     'setup.grant':'Grant permissions','setup.openDev':'Open Developer options',
     'setup.recheck':'Re-check','setup.dismiss':'Dismiss',
+    'setup.granted':'Granted',
+    'setup.check2help':'How to select the mock location app',
+    'setup.pendingPerm':'Still waiting: grant location & notification permission.',
+    'setup.pendingMock':'Still waiting: select Route Spoofer as the mock location app in Developer options.',
+    'setup.stillChecking':'Couldn\'t read setup state — tap Re-check again.',
+    'mock.title':'Select the mock location app',
+    'mock.intro':'Point Android at Route Spoofer as its mock location source — a one-time setting.',
+    'mock.step1':'Enable Developer options: Settings → About phone → tap Build number 7 times.',
+    'mock.step1sub':'On Samsung: → Software information.',
+    'mock.step2':'Open Settings → System → Developer options.',
+    'mock.step3':'Tap “Select mock location app”.',
+    'mock.step4':'Choose Route Spoofer.',
+    'mock.note':'The exact path varies slightly by phone brand.',
+    'mock.pending':'Not selected yet — choose Route Spoofer under “Select mock location app”.',
+    'hint.locationBlocked':'Location is blocked. In Settings → Permissions, allow Location.',
     'dev.title':'Developer options are off',
     'dev.intro':'Mock GPS needs Android Developer options enabled — a one-time setting. Turn it on, then come back and re-check.',
     'dev.step1':'Open Settings → About phone','dev.step1sub':'On Samsung: → Software information.',
@@ -797,7 +862,7 @@ const I18N = {
     'hint.dropFirst':'Drop at least one point first.','hint.routeComplete':'Route complete.',
     'hint.finishSetup':'Finish setup to start.','hint.couldNotStart':'Could not start mock service.',
     'hint.locating':'Locating…','hint.centered':'Centered on your location.',
-    'hint.locationDenied':'Location denied.','hint.geoUnavailable':'Geolocation unavailable.',
+    'hint.locationDenied':'Location is off — allow it in Settings to use this.','hint.geoUnavailable':'Geolocation unavailable.',
     'hint.ready':'Ready — tap play.','hint.devOn':'Developer options on — now pick the mock app.',
     'hint.devStillOff':'Still off — enable Developer options to continue.',
     'wp.startRemove':'Start — tap to remove','wp.tapRemove':'Tap to remove',
@@ -823,6 +888,21 @@ const I18N = {
     'setup.check2desc':'Для разработчиков → «Приложение для фиктивных местоположений» → Route Spoofer.',
     'setup.grant':'Выдать разрешения','setup.openDev':'Открыть «Для разработчиков»',
     'setup.recheck':'Проверить снова','setup.dismiss':'Скрыть',
+    'setup.granted':'Предоставлено',
+    'setup.check2help':'Как выбрать приложение для имитации местоположения',
+    'setup.pendingPerm':'Ещё нужно: разрешить доступ к геолокации и уведомлениям.',
+    'setup.pendingMock':'Ещё нужно: выбрать Route Spoofer как приложение для имитации местоположения в параметрах разработчика.',
+    'setup.stillChecking':'Не удалось прочитать состояние — нажмите «Проверить снова».',
+    'mock.title':'Выбор приложения для имитации местоположения',
+    'mock.intro':'Укажите Android, что Route Spoofer — источник имитации местоположения. Это однократная настройка.',
+    'mock.step1':'Включите параметры разработчика: Настройки → О телефоне → 7 раз нажмите «Номер сборки».',
+    'mock.step1sub':'На Samsung: → Сведения о ПО.',
+    'mock.step2':'Откройте Настройки → Система → Для разработчиков.',
+    'mock.step3':'Нажмите «Приложение для имитации местоположения».',
+    'mock.step4':'Выберите Route Spoofer.',
+    'mock.note':'Точный путь немного отличается у разных производителей.',
+    'mock.pending':'Пока не выбрано — укажите Route Spoofer в «Приложение для имитации местоположения».',
+    'hint.locationBlocked':'Геолокация заблокирована. В Настройках → Разрешения включите «Местоположение».',
     'dev.title':'Режим разработчика выключен',
     'dev.intro':'Фиктивному GPS нужны включённые «Параметры разработчика» Android — это разовая настройка. Включите их и вернитесь для повторной проверки.',
     'dev.step1':'Откройте Настройки → О телефоне','dev.step1sub':'На Samsung: → Сведения о ПО.',
@@ -833,7 +913,7 @@ const I18N = {
     'hint.dropFirst':'Сначала поставьте хотя бы одну точку.','hint.routeComplete':'Маршрут завершён.',
     'hint.finishSetup':'Завершите настройку для запуска.','hint.couldNotStart':'Не удалось запустить службу фиктивного GPS.',
     'hint.locating':'Определение…','hint.centered':'Карта по вашему местоположению.',
-    'hint.locationDenied':'Доступ к геолокации запрещён.','hint.geoUnavailable':'Геолокация недоступна.',
+    'hint.locationDenied':'Геолокация выключена — включите её в настройках.','hint.geoUnavailable':'Геолокация недоступна.',
     'hint.ready':'Готово — нажмите воспроизведение.','hint.devOn':'Режим разработчика включён — выберите приложение для фиктивной локации.',
     'hint.devStillOff':'Всё ещё выключено — включите режим разработчика, чтобы продолжить.',
     'wp.startRemove':'Старт — нажмите, чтобы удалить','wp.tapRemove':'Нажмите, чтобы удалить',
@@ -859,6 +939,21 @@ const I18N = {
     'setup.check2desc':'Entwickleroptionen → „App für simulierte Standorte“ → Route Spoofer.',
     'setup.grant':'Berechtigungen erteilen','setup.openDev':'Entwickleroptionen öffnen',
     'setup.recheck':'Erneut prüfen','setup.dismiss':'Schließen',
+    'setup.granted':'Erteilt',
+    'setup.check2help':'So wählst du die Mock-Standort-App',
+    'setup.pendingPerm':'Fehlt noch: Standort- und Benachrichtigungsberechtigung erteilen.',
+    'setup.pendingMock':'Fehlt noch: Route Spoofer in den Entwickleroptionen als Mock-Standort-App auswählen.',
+    'setup.stillChecking':'Status nicht lesbar — erneut auf „Erneut prüfen“ tippen.',
+    'mock.title':'Mock-Standort-App auswählen',
+    'mock.intro':'Lege Route Spoofer als Mock-Standortquelle für Android fest — eine einmalige Einstellung.',
+    'mock.step1':'Entwickleroptionen aktivieren: Einstellungen → Über das Telefon → 7-mal auf Build-Nummer tippen.',
+    'mock.step1sub':'Bei Samsung: → Softwareinformationen.',
+    'mock.step2':'Öffne Einstellungen → System → Entwickleroptionen.',
+    'mock.step3':'Tippe auf „App für simulierte Standorte auswählen“.',
+    'mock.step4':'Wähle Route Spoofer.',
+    'mock.note':'Der genaue Pfad unterscheidet sich je nach Hersteller leicht.',
+    'mock.pending':'Noch nicht ausgewählt — wähle Route Spoofer unter „App für simulierte Standorte auswählen“.',
+    'hint.locationBlocked':'Standort ist blockiert. Erlaube ihn unter Einstellungen → Berechtigungen.',
     'dev.title':'Entwickleroptionen sind aus',
     'dev.intro':'Mock-GPS benötigt aktivierte Android-Entwickleroptionen – eine einmalige Einstellung. Aktiviere sie und prüfe dann erneut.',
     'dev.step1':'Öffne Einstellungen → Über das Telefon','dev.step1sub':'Bei Samsung: → Softwareinformationen.',
@@ -869,7 +964,7 @@ const I18N = {
     'hint.dropFirst':'Setze zuerst mindestens einen Punkt.','hint.routeComplete':'Route abgeschlossen.',
     'hint.finishSetup':'Schließe die Einrichtung ab, um zu starten.','hint.couldNotStart':'Mock-Dienst konnte nicht gestartet werden.',
     'hint.locating':'Suche…','hint.centered':'Auf deinen Standort zentriert.',
-    'hint.locationDenied':'Standort verweigert.','hint.geoUnavailable':'Standortdienst nicht verfügbar.',
+    'hint.locationDenied':'Standort ist aus — erlaube ihn in den Einstellungen.','hint.geoUnavailable':'Standortdienst nicht verfügbar.',
     'hint.ready':'Bereit – tippe auf Wiedergabe.','hint.devOn':'Entwickleroptionen an – wähle jetzt die Mock-App.',
     'hint.devStillOff':'Immer noch aus – aktiviere die Entwickleroptionen, um fortzufahren.',
     'wp.startRemove':'Start – tippen zum Entfernen','wp.tapRemove':'Tippen zum Entfernen',
@@ -895,6 +990,21 @@ const I18N = {
     'setup.check2desc':'Opciones de desarrollador → «Aplicación de ubicaciones simuladas» → Route Spoofer.',
     'setup.grant':'Conceder permisos','setup.openDev':'Abrir opciones de desarrollador',
     'setup.recheck':'Volver a comprobar','setup.dismiss':'Descartar',
+    'setup.granted':'Concedido',
+    'setup.check2help':'Cómo seleccionar la app de ubicación simulada',
+    'setup.pendingPerm':'Aún falta: conceder permiso de ubicación y notificaciones.',
+    'setup.pendingMock':'Aún falta: seleccionar Route Spoofer como app de ubicación simulada en Opciones de desarrollador.',
+    'setup.stillChecking':'No se pudo leer el estado — pulsa «Volver a comprobar».',
+    'mock.title':'Seleccionar la app de ubicación simulada',
+    'mock.intro':'Indica a Android que Route Spoofer es su fuente de ubicación simulada — un ajuste único.',
+    'mock.step1':'Activa Opciones de desarrollador: Ajustes → Información del teléfono → toca Número de compilación 7 veces.',
+    'mock.step1sub':'En Samsung: → Información de software.',
+    'mock.step2':'Abre Ajustes → Sistema → Opciones de desarrollador.',
+    'mock.step3':'Toca «Seleccionar app de ubicación simulada».',
+    'mock.step4':'Elige Route Spoofer.',
+    'mock.note':'La ruta exacta varía un poco según la marca del teléfono.',
+    'mock.pending':'Aún no seleccionada — elige Route Spoofer en «Seleccionar app de ubicación simulada».',
+    'hint.locationBlocked':'La ubicación está bloqueada. En Ajustes → Permisos, permite la Ubicación.',
     'dev.title':'Las opciones de desarrollador están desactivadas',
     'dev.intro':'El GPS simulado necesita las opciones de desarrollador de Android activadas, un ajuste único. Actívalas y vuelve a comprobar.',
     'dev.step1':'Abre Ajustes → Información del teléfono','dev.step1sub':'En Samsung: → Información de software.',
@@ -905,7 +1015,7 @@ const I18N = {
     'hint.dropFirst':'Pon al menos un punto primero.','hint.routeComplete':'Ruta completada.',
     'hint.finishSetup':'Completa la configuración para empezar.','hint.couldNotStart':'No se pudo iniciar el servicio simulado.',
     'hint.locating':'Localizando…','hint.centered':'Centrado en tu ubicación.',
-    'hint.locationDenied':'Ubicación denegada.','hint.geoUnavailable':'Geolocalización no disponible.',
+    'hint.locationDenied':'La ubicación está desactivada — actívala en Ajustes.','hint.geoUnavailable':'Geolocalización no disponible.',
     'hint.ready':'Listo: toca reproducir.','hint.devOn':'Opciones de desarrollador activadas: elige la app de ubicación simulada.',
     'hint.devStillOff':'Sigue desactivado: activa las opciones de desarrollador para continuar.',
     'wp.startRemove':'Inicio: toca para eliminar','wp.tapRemove':'Toca para eliminar',
@@ -931,6 +1041,21 @@ const I18N = {
     'setup.check2desc':'Opções do desenvolvedor → «Aplicativo de localização fictícia» → Route Spoofer.',
     'setup.grant':'Conceder permissões','setup.openDev':'Abrir opções do desenvolvedor',
     'setup.recheck':'Verificar de novo','setup.dismiss':'Dispensar',
+    'setup.granted':'Concedida',
+    'setup.check2help':'Como selecionar o app de localização simulada',
+    'setup.pendingPerm':'Ainda falta: conceder permissão de localização e notificações.',
+    'setup.pendingMock':'Ainda falta: selecionar o Route Spoofer como app de localização simulada nas Opções do desenvolvedor.',
+    'setup.stillChecking':'Não foi possível ler o estado — toque em «Verificar de novo».',
+    'mock.title':'Selecionar o app de localização simulada',
+    'mock.intro':'Defina o Route Spoofer como fonte de localização simulada do Android — uma configuração única.',
+    'mock.step1':'Ative as Opções do desenvolvedor: Configurações → Sobre o telefone → toque em Número da versão 7 vezes.',
+    'mock.step1sub':'Na Samsung: → Informações de software.',
+    'mock.step2':'Abra Configurações → Sistema → Opções do desenvolvedor.',
+    'mock.step3':'Toque em «Selecionar app de localização simulada».',
+    'mock.step4':'Escolha o Route Spoofer.',
+    'mock.note':'O caminho exato varia um pouco conforme a marca do aparelho.',
+    'mock.pending':'Ainda não selecionado — escolha o Route Spoofer em «Selecionar app de localização simulada».',
+    'hint.locationBlocked':'A localização está bloqueada. Em Configurações → Permissões, permita a Localização.',
     'dev.title':'As opções do desenvolvedor estão desativadas',
     'dev.intro':'O GPS falso precisa das opções do desenvolvedor do Android ativadas — um ajuste único. Ative-as e verifique de novo.',
     'dev.step1':'Abra Configurações → Sobre o telefone','dev.step1sub':'No Samsung: → Informações de software.',
@@ -941,7 +1066,7 @@ const I18N = {
     'hint.dropFirst':'Marque ao menos um ponto primeiro.','hint.routeComplete':'Rota concluída.',
     'hint.finishSetup':'Conclua a configuração para iniciar.','hint.couldNotStart':'Não foi possível iniciar o serviço falso.',
     'hint.locating':'Localizando…','hint.centered':'Centralizado na sua localização.',
-    'hint.locationDenied':'Localização negada.','hint.geoUnavailable':'Geolocalização indisponível.',
+    'hint.locationDenied':'A localização está desativada — ative-a nas Configurações.','hint.geoUnavailable':'Geolocalização indisponível.',
     'hint.ready':'Pronto — toque em reproduzir.','hint.devOn':'Opções do desenvolvedor ativadas — escolha o app de localização falsa.',
     'hint.devStillOff':'Ainda desativado — ative as opções do desenvolvedor para continuar.',
     'wp.startRemove':'Início — toque para remover','wp.tapRemove':'Toque para remover',
@@ -967,6 +1092,21 @@ const I18N = {
     'setup.check2desc':'Options pour les développeurs → « Application de position fictive » → Route Spoofer.',
     'setup.grant':'Accorder les autorisations','setup.openDev':'Ouvrir les options pour développeurs',
     'setup.recheck':'Revérifier','setup.dismiss':'Ignorer',
+    'setup.granted':'Accordée',
+    'setup.check2help':'Comment sélectionner l’application de position fictive',
+    'setup.pendingPerm':'Il manque encore : accorder l’autorisation de localisation et de notifications.',
+    'setup.pendingMock':'Il manque encore : sélectionner Route Spoofer comme application de position fictive dans les options pour développeurs.',
+    'setup.stillChecking':'État illisible — appuyez de nouveau sur « Revérifier ».',
+    'mock.title':'Sélectionner l’application de position fictive',
+    'mock.intro':'Indiquez à Android que Route Spoofer est sa source de position fictive — un réglage unique.',
+    'mock.step1':'Activez les options pour développeurs : Paramètres → À propos du téléphone → appuyez 7 fois sur Numéro de build.',
+    'mock.step1sub':'Sur Samsung : → Informations sur le logiciel.',
+    'mock.step2':'Ouvrez Paramètres → Système → Options pour développeurs.',
+    'mock.step3':'Appuyez sur « Sélectionner l’application de position fictive ».',
+    'mock.step4':'Choisissez Route Spoofer.',
+    'mock.note':'Le chemin exact varie légèrement selon la marque.',
+    'mock.pending':'Pas encore sélectionnée — choisissez Route Spoofer dans « Sélectionner l’application de position fictive ».',
+    'hint.locationBlocked':'La localisation est bloquée. Dans Paramètres → Autorisations, autorisez la Localisation.',
     'dev.title':'Les options pour développeurs sont désactivées',
     'dev.intro':'Le GPS fictif nécessite les options pour développeurs d’Android activées — un réglage unique. Activez-les puis revérifiez.',
     'dev.step1':'Ouvrez Paramètres → À propos du téléphone','dev.step1sub':'Sur Samsung : → Informations sur le logiciel.',
@@ -977,7 +1117,7 @@ const I18N = {
     'hint.dropFirst':'Placez d’abord au moins un point.','hint.routeComplete':'Trajet terminé.',
     'hint.finishSetup':'Terminez la configuration pour démarrer.','hint.couldNotStart':'Impossible de démarrer le service fictif.',
     'hint.locating':'Localisation…','hint.centered':'Centré sur votre position.',
-    'hint.locationDenied':'Localisation refusée.','hint.geoUnavailable':'Géolocalisation indisponible.',
+    'hint.locationDenied':'La localisation est désactivée — activez-la dans les Paramètres.','hint.geoUnavailable':'Géolocalisation indisponible.',
     'hint.ready':'Prêt — touchez lecture.','hint.devOn':'Options développeur activées — choisissez l’appli de position fictive.',
     'hint.devStillOff':'Toujours désactivé — activez les options développeur pour continuer.',
     'wp.startRemove':'Départ — touchez pour supprimer','wp.tapRemove':'Touchez pour supprimer',
@@ -1003,6 +1143,21 @@ const I18N = {
     'setup.check2desc':'开发者选项 →“选择模拟位置应用”→ Route Spoofer。',
     'setup.grant':'授予权限','setup.openDev':'打开开发者选项',
     'setup.recheck':'重新检查','setup.dismiss':'忽略',
+    'setup.granted':'已授予',
+    'setup.check2help':'如何选择模拟位置应用',
+    'setup.pendingPerm':'仍需完成：授予位置和通知权限。',
+    'setup.pendingMock':'仍需完成：在开发者选项中将 Route Spoofer 选为模拟位置应用。',
+    'setup.stillChecking':'无法读取状态——请再次点击“重新检查”。',
+    'mock.title':'选择模拟位置应用',
+    'mock.intro':'将 Route Spoofer 设为 Android 的模拟位置来源——这是一次性设置。',
+    'mock.step1':'启用开发者选项：设置 → 关于手机 → 连续点击“版本号”7 次。',
+    'mock.step1sub':'三星机型：→ 软件信息。',
+    'mock.step2':'打开 设置 → 系统 → 开发者选项。',
+    'mock.step3':'点击“选择模拟位置应用”。',
+    'mock.step4':'选择 Route Spoofer。',
+    'mock.note':'具体路径因手机品牌略有不同。',
+    'mock.pending':'尚未选择——请在“选择模拟位置应用”中选择 Route Spoofer。',
+    'hint.locationBlocked':'位置权限被屏蔽。请在 设置 → 权限 中允许“位置”。',
     'dev.title':'开发者选项未开启',
     'dev.intro':'模拟 GPS 需要开启 Android 开发者选项，这是一次性设置。开启后返回并重新检查。',
     'dev.step1':'打开 设置 → 关于手机','dev.step1sub':'三星机型：→ 软件信息。',
@@ -1013,7 +1168,7 @@ const I18N = {
     'hint.dropFirst':'请先放置至少一个点。','hint.routeComplete':'路线完成。',
     'hint.finishSetup':'完成设置后即可开始。','hint.couldNotStart':'无法启动模拟服务。',
     'hint.locating':'定位中…','hint.centered':'已居中到你的位置。',
-    'hint.locationDenied':'位置权限被拒绝。','hint.geoUnavailable':'无法使用定位。',
+    'hint.locationDenied':'位置已关闭——请在设置中允许。','hint.geoUnavailable':'无法使用定位。',
     'hint.ready':'就绪 — 点击播放。','hint.devOn':'开发者选项已开启 — 现在选择模拟位置应用。',
     'hint.devStillOff':'仍未开启 — 请开启开发者选项以继续。',
     'wp.startRemove':'起点 — 点击删除','wp.tapRemove':'点击删除',
@@ -1039,6 +1194,21 @@ const I18N = {
     'setup.check2desc':'डेवलपर विकल्प → «मॉक स्थान ऐप चुनें» → Route Spoofer।',
     'setup.grant':'अनुमतियाँ दें','setup.openDev':'डेवलपर विकल्प खोलें',
     'setup.recheck':'फिर से जाँचें','setup.dismiss':'खारिज करें',
+    'setup.granted':'दी गई',
+    'setup.check2help':'मॉक लोकेशन ऐप कैसे चुनें',
+    'setup.pendingPerm':'अभी बाकी: स्थान और सूचना की अनुमति दें।',
+    'setup.pendingMock':'अभी बाकी: डेवलपर विकल्पों में Route Spoofer को मॉक लोकेशन ऐप के रूप में चुनें।',
+    'setup.stillChecking':'स्थिति नहीं पढ़ी जा सकी — फिर से «फिर से जाँचें» दबाएँ।',
+    'mock.title':'मॉक लोकेशन ऐप चुनें',
+    'mock.intro':'Android को बताएँ कि Route Spoofer उसका मॉक लोकेशन स्रोत है — यह एक बार की सेटिंग है।',
+    'mock.step1':'डेवलपर विकल्प चालू करें: सेटिंग्स → फ़ोन के बारे में → «बिल्ड नंबर» पर 7 बार टैप करें।',
+    'mock.step1sub':'Samsung पर: → सॉफ़्टवेयर जानकारी।',
+    'mock.step2':'सेटिंग्स → सिस्टम → डेवलपर विकल्प खोलें।',
+    'mock.step3':'«मॉक लोकेशन ऐप चुनें» पर टैप करें।',
+    'mock.step4':'Route Spoofer चुनें।',
+    'mock.note':'सटीक रास्ता फ़ोन ब्रांड के अनुसार थोड़ा अलग होता है।',
+    'mock.pending':'अभी चुना नहीं गया — «मॉक लोकेशन ऐप चुनें» में Route Spoofer चुनें।',
+    'hint.locationBlocked':'स्थान अवरुद्ध है। सेटिंग्स → अनुमतियाँ में «स्थान» की अनुमति दें।',
     'dev.title':'डेवलपर विकल्प बंद हैं',
     'dev.intro':'मॉक GPS के लिए Android के डेवलपर विकल्प चालू होने चाहिए — यह एक बार की सेटिंग है। इसे चालू करें और फिर से जाँचें।',
     'dev.step1':'सेटिंग → फ़ोन के बारे में खोलें','dev.step1sub':'Samsung पर: → सॉफ़्टवेयर जानकारी।',
@@ -1049,7 +1219,7 @@ const I18N = {
     'hint.dropFirst':'पहले कम से कम एक बिंदु रखें।','hint.routeComplete':'रूट पूरा हुआ।',
     'hint.finishSetup':'शुरू करने के लिए सेटअप पूरा करें।','hint.couldNotStart':'मॉक सेवा शुरू नहीं हो सकी।',
     'hint.locating':'ढूँढ रहा है…','hint.centered':'आपके स्थान पर केंद्रित।',
-    'hint.locationDenied':'स्थान अस्वीकृत।','hint.geoUnavailable':'जियोलोकेशन उपलब्ध नहीं।',
+    'hint.locationDenied':'स्थान बंद है — इसे सेटिंग्स में चालू करें।','hint.geoUnavailable':'जियोलोकेशन उपलब्ध नहीं।',
     'hint.ready':'तैयार — प्ले पर टैप करें।','hint.devOn':'डेवलपर विकल्प चालू — अब मॉक स्थान ऐप चुनें।',
     'hint.devStillOff':'अब भी बंद — जारी रखने के लिए डेवलपर विकल्प चालू करें।',
     'wp.startRemove':'शुरुआत — हटाने के लिए टैप करें','wp.tapRemove':'हटाने के लिए टैप करें',
@@ -1096,6 +1266,7 @@ function applyI18n(){
   if(!S.waypoints.length && $('hint').style.opacity==='1') showHint();
   const sel=$('langSel'); if(sel){ const p=storedLangPref(); sel.value = (p && I18N[p]) ? p : 'auto'; }
   const rt=document.getElementById('routes'); if(rt && rt.classList.contains('show')) renderRoutesList();   // re-translate the open routes modal
+  if(lastReady) paintReady(lastReady);   // re-apply state-driven button labels/variants after re-translate
 }
 function initLang(){
   const pref = storedLangPref();
@@ -1515,6 +1686,22 @@ $('clear').onclick=()=>{ if(S.gpsOn)return; S.waypoints=[]; refreshMarkers(); re
 $('reverse').onclick=()=>{ if(S.gpsOn||S.waypoints.length<2)return; S.waypoints.reverse(); refreshMarkers(); recompute(); persist(); };
 
 $('locate').onclick=async ()=>{
+  // FIX 5 — check permission up front (fast flag read, not a GPS fix) so a
+  // missing permission never burns ~10s on a geolocation timeout.
+  if(isNative && FakeGps){
+    let st=await refreshReady();
+    if(!st.locationPermission){
+      let granted=false;
+      try{ await FakeGps.requestPermissions(); st=await refreshReady(); granted=!!st.locationPermission; }
+      catch(e){ console.warn(e); }
+      if(!granted){
+        // declined / permanently denied → actionable wording + deep link to app settings
+        flashHint(t('hint.locationBlocked'));
+        if(FakeGps.openAppSettings){ try{ await FakeGps.openAppSettings(); }catch(e){ console.warn(e);} }
+        return;
+      }
+    }
+  }
   flashHint(t('hint.locating'));
   try{
     if(isNative && Geo){
@@ -1609,17 +1796,65 @@ async function refreshReady(){
   return lastReady;
 }
 function paintReady(st){
-  const permOk = st.locationPermission && st.notificationPermission;
+  const permOk = !!(st.locationPermission && st.notificationPermission);
+  const mockOk = !!st.mockAppEnabled;
   const cp=$('chkPerm'), cm=$('chkMock');
   cp.className='check '+(permOk?'ok':'bad'); cp.querySelector('.ic').textContent=permOk?'✓':'1';
-  cm.className='check '+(st.mockAppEnabled?'ok':'bad'); cm.querySelector('.ic').textContent=st.mockAppEnabled?'✓':'2';
+  // keep the 'tappable' affordance — chkMock opens the step-2 instructions
+  cm.className='check tappable '+(mockOk?'ok':'bad'); cm.querySelector('.ic').textContent=mockOk?'✓':'2';
+  // FIX 1 — the primary (yellow) accent follows the two readiness flags, so the
+  // styled "next step" is always the one that actually does something.
+  const bg=$('btnGrant'), bd=$('btnDev');
+  if(bg && bd){
+    bg.classList.remove('primary','granted'); bd.classList.remove('primary'); bg.disabled=false;
+    if(!permOk){                       // step 1 outstanding → granting is the action
+      bg.classList.add('primary'); bg.textContent=t('setup.grant');
+    } else {                           // permissions already granted — keep the button visible but inert
+      bg.disabled=true; bg.classList.add('granted'); bg.textContent='✓ '+t('setup.granted');
+      if(!mockOk) bd.classList.add('primary');   // selecting the mock app is the real next step
+    }
+    // both satisfied → nothing left to do here; close the gate automatically
+    if(permOk && mockOk && $('setup').classList.contains('show')){ closeSetup(); flashHint(t('hint.ready')); }
+  }
 }
 function openSetup(){ refreshReady(); $('setup').classList.add('show'); }
 function closeSetup(){ $('setup').classList.remove('show'); }
 function openDevHelp(){ $('devhelp').classList.add('show'); }
 function closeDevHelp(){ $('devhelp').classList.remove('show'); }
+
+/* ---- shared step-2 ("Select mock location app") instructions ----
+   Cloned from #mockStepsTpl into BOTH the info "?" page and the step-2 modal,
+   so the two render from one source. applyI18n() translates the clones. */
+function renderMockSteps(){
+  const tpl=document.getElementById('mockStepsTpl'); if(!tpl) return;
+  ['mockHelpSteps','helpMockSteps'].forEach(id=>{
+    const el=$(id); if(el && !el.childElementCount) el.appendChild(tpl.content.cloneNode(true));
+  });
+}
+function openMockHelp(){ renderMockSteps(); $('mockhelp').classList.add('show'); }
+function closeMockHelp(){ $('mockhelp').classList.remove('show'); }
+
+/* ---- small UI helpers for Re-check feedback (FIX 3) ---- */
+const delay = ms => new Promise(r=>setTimeout(r,ms));
+function setChecking(btn, on){
+  if(!btn) return;
+  if(on){ btn._wasDisabled=btn.disabled; btn.disabled=true; btn.classList.add('is-checking'); }
+  else { btn.classList.remove('is-checking'); btn.disabled=!!btn._wasDisabled; }
+}
+function showMsg(id, text){
+  const el=$(id); if(!el || !text) return;
+  el.textContent=text; el.hidden=false; el.style.opacity='1';
+  clearTimeout(el._t); el._t=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.hidden=true; }, 220); }, 4200);
+}
+function pendingMsg(st){
+  if(!st) return t('setup.stillChecking');
+  if(!(st.locationPermission && st.notificationPermission)) return t('setup.pendingPerm');
+  if(!st.mockAppEnabled) return t('setup.pendingMock');
+  return '';
+}
+
 $('btnGrant').onclick=async ()=>{ if(FakeGps){ try{ await FakeGps.requestPermissions(); }catch(e){ console.warn(e);} } await refreshReady(); };
-$('btnDev').onclick=async ()=>{
+async function openDevSettingsGuided(){
   if(!FakeGps) return;
   // Only fire the dev-settings intent if Developer options are actually on —
   // otherwise Android shows a dead-end system toast. Guide the user instead.
@@ -1628,16 +1863,59 @@ $('btnDev').onclick=async ()=>{
   catch(e){ console.warn(e); on = lastReady ? lastReady.devOptionsEnabled!==false : true; }
   if(on){ try{ await FakeGps.openDevSettings(); }catch(e){ console.warn(e);} }
   else openDevHelp();
+}
+$('btnDev').onclick=openDevSettingsGuided;
+$('btnRecheck').onclick=async (e)=>{
+  const btn=e.currentTarget; setChecking(btn,true);
+  const [st]=await Promise.all([ refreshReady(), delay(380) ]);   // brief, visible checking state
+  setChecking(btn,false);
+  if(st && st.ready){ closeSetup(); flashHint(t('hint.ready')); }
+  else showMsg('setupMsg', pendingMsg(st));                       // never a silent no-op
 };
-$('btnRecheck').onclick=async ()=>{ const st=await refreshReady(); if(st.ready){ closeSetup(); flashHint(t('hint.ready')); } };
 $('btnDismiss').onclick=closeSetup;
 $('btnAbout').onclick=async ()=>{ if(FakeGps){ try{ await FakeGps.openAboutPhone(); }catch(e){ console.warn(e);} } };
-$('btnDevRecheck').onclick=async ()=>{
-  const st=await refreshReady();
+$('btnDevRecheck').onclick=async (e)=>{
+  const btn=e.currentTarget; setChecking(btn,true);
+  const [st]=await Promise.all([ refreshReady(), delay(380) ]);
+  setChecking(btn,false);
   if(st && st.devOptionsEnabled){ closeDevHelp(); flashHint(t('hint.devOn')); }
-  else flashHint(t('hint.devStillOff'));
+  else showMsg('devMsg', t('hint.devStillOff'));
 };
 $('btnDevClose').onclick=closeDevHelp;
+
+/* step-2 instruction modal wiring */
+$('chkMock').onclick=openMockHelp;
+$('chkMock').addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openMockHelp(); } });
+$('btnMockDev').onclick=openDevSettingsGuided;
+$('btnMockClose').onclick=closeMockHelp;
+$('mockhelp').onclick=e=>{ if(e.target.id==='mockhelp') closeMockHelp(); };
+$('btnMockRecheck').onclick=async (e)=>{
+  const btn=e.currentTarget; setChecking(btn,true);
+  const [st]=await Promise.all([ refreshReady(), delay(380) ]);
+  setChecking(btn,false);
+  if(st && st.mockAppEnabled){
+    closeMockHelp();
+    if(st.ready){ closeSetup(); flashHint(t('hint.ready')); }
+    else showMsg('setupMsg', pendingMsg(st));
+  } else {
+    showMsg('mockMsg', t('mock.pending'));
+  }
+};
+
+/* ---- FIX 5: re-validate on resume; revoked permission re-shows the gate ---- */
+let _lastResumeCheck=0;
+async function revalidateOnResume(){
+  if(!isNative || !FakeGps) return;
+  const now=Date.now();
+  if(now-_lastResumeCheck < 800) return;   // debounce duplicate visibility/focus signals
+  _lastResumeCheck=now;
+  const st=await refreshReady();           // fast: reads permission/settings flags, no GPS fix
+  if(!st) return;
+  const permOk = st.locationPermission && st.notificationPermission;
+  if(!permOk && !$('setup').classList.contains('show')) openSetup();   // revoked while away → same gate as first launch
+}
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') revalidateOnResume(); });
+window.addEventListener('focus', revalidateOnResume);
 
 /* ---------- language switcher + GitHub link ---------- */
 $('langSel').onchange = e => setLang(e.target.value);
@@ -1841,7 +2119,8 @@ try{ setDeckCollapsed(localStorage.getItem(DECK_KEY)==='1', false); }catch(e){}
 document.body.dataset.gps='off';
 document.body.dataset.phase='standing';
 $('go').disabled=true;
-applyI18n();                 // localize the static UI before first paint
+renderMockSteps();           // clone shared step-2 instructions into both render targets…
+applyI18n();                 // …then localize the static UI (incl. those clones) before first paint
 renderLiveCoord(sampleAt(0));
 paintHud();
 map.whenReady(refreshHint);   // show the empty-state hint once the map is ready (survives a cold start)

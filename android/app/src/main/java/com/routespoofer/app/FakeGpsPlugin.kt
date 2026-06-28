@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.core.app.NotificationCompat
@@ -282,6 +283,30 @@ class FakeGpsPlugin : Plugin() {
         try {
             val intent =
                 Intent(Settings.ACTION_DEVICE_INFO_SETTINGS)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                context.startActivity(
+                    Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                )
+            } catch (_: Exception) {
+            }
+        }
+        call.resolve()
+    }
+
+    /**
+     * Deep-link to this app's "App info" screen so the user can re-grant a
+     * location permission that was revoked (manually, or by Android auto-revoke
+     * for unused apps). Used when a runtime request can no longer prompt.
+     */
+    @PluginMethod
+    fun openAppSettings(call: PluginCall) {
+        try {
+            val intent =
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.fromParts("package", context.packageName, null))
                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         } catch (e: Exception) {
