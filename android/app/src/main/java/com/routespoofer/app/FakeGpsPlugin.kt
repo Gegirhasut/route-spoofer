@@ -262,17 +262,30 @@ class FakeGpsPlugin : Plugin() {
 
     @PluginMethod
     fun openDevSettings(call: PluginCall) {
-        try {
-            val intent =
-                Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            val intent = Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        }
-        call.resolve()
+        // Developer options host the "Select mock location app" picker. Guarded the
+        // same way as openUrl(): a ROM that can't resolve the specific intent
+        // (ActivityNotFoundException) falls back to the general Settings screen, and
+        // reports opened=false instead of crashing if even that can't resolve, so
+        // the web layer can degrade to an in-app hint (#4528).
+        val opened = openSettingsScreen(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
+        call.resolve(JSObject().put("opened", opened))
     }
+
+    /**
+     * Open a specific system settings screen, guarded like openUrl(): try the
+     * requested action, then fall back to the top-level Settings screen, returning
+     * false (never throwing) if neither can be resolved on this device/ROM.
+     */
+    private fun openSettingsScreen(action: String): Boolean =
+        startSettingsActivity(action) || startSettingsActivity(Settings.ACTION_SETTINGS)
+
+    private fun startSettingsActivity(action: String): Boolean =
+        try {
+            context.startActivity(Intent(action).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            true
+        } catch (e: Exception) {
+            false
+        }
 
     /**
      * Open the "About phone" / device-info screen so the user lands near the
