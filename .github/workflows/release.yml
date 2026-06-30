@@ -145,6 +145,9 @@ jobs:
           echo "== targetSdk (from merged manifest) =="
           MM=$(find android/app/build -path '*merged_manifest*release*/AndroidManifest.xml' | head -1)
           grep -o 'targetSdkVersion="[0-9]*"' "$MM" || true
+          echo "== version (from merged manifest — goes into the AAB) =="
+          grep -o 'android:versionCode="[0-9]*"' "$MM" || true
+          grep -o 'android:versionName="[^"]*"' "$MM" || true
           echo "signing mode: ${{ steps.keystore.outputs.mode }}"
 
       - name: Upload AAB artifact
