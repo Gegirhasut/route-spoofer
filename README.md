@@ -67,6 +67,15 @@ movement math and the hold/wake state machine live in a pure, unit-tested
 For this to work, Route Spoofer must be selected as the system **mock-location
 app** in Android Developer options (see Phone setup).
 
+## Known limitations
+
+Route Spoofer mocks the system location provider (and the Fused Location Provider
+on Google Play devices), so it works with apps that rely on system location —
+verified with Google Maps and maps.me. Some apps run their own network-based
+positioning on top of the system location (Yandex Maps is one observed example)
+and can override the mock with the device's real position. **Workaround:** disable
+Wi-Fi and mobile data while spoofing.
+
 ## Phone setup
 
 1. Enable **Developer options**: **Settings → About phone → Build number**,
