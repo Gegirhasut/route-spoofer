@@ -268,35 +268,81 @@ class RouteEngine(initial: List<Waypoint> = emptyList()) {
     }
 
     /**
-     * Re-anchor [traveled] to the arc length of the point on the (possibly
-     * changed) route nearest to [p], keeping the world position continuous when
-     * geometry is edited. For edits behind the cursor the nearest point is exactly
-     * the current position (its segment endpoints are unchanged), so there is no
-     * shift; editing the active target snaps to the nearest point on the new leg.
+     * Re-anchor [traveled] onto the (possibly changed) route while keeping the world
+     * position continuous AND respecting where the cursor already was. Plain
+     * nearest-point projection teleports when the edited polyline passes near the
+     * cursor in more than one place (a route that bends/doubles back), often snapping
+     * the cursor backward and flipping the heading (#4539). Instead we keep only the
+     * segments that are essentially as close as the genuine nearest, then among those
+     * pick the projection whose arc length is most continuous with [prevTraveled].
+     *
+     * Consequences this preserves:
+     *  - edits strictly behind the cursor: the cursor's own segment is the ONLY spatial
+     *    contender, so its position is reproduced exactly (no shift);
+     *  - editing the active target: snaps to the nearest point on the new leg;
+     *  - bearing needs no separate fix — it is read off whichever segment [traveled]
+     *    lands on, so once continuity keeps the right segment the heading is correct.
      */
     private fun reanchorTo(p: LatLng) {
         if (wps.size < 2) {
             traveled = 0.0
             return
         }
-        var bestDist2 = Double.MAX_VALUE
-        var bestArc = 0.0
+        val prevTraveled = traveled
+
+        // The genuine spatial-nearest distance. Only segments essentially this close are
+        // real candidates — this keeps edits behind the cursor exact (one contender) and
+        // stops a far part of the route from ever capturing the cursor.
+        var nearestDist = Double.MAX_VALUE
         for (i in 0 until wps.size - 1) {
-            val a = wps[i].pos
-            val b = wps[i + 1].pos
-            val abLat = b.lat - a.lat
-            val abLng = b.lng - a.lng
-            val len2 = abLat * abLat + abLng * abLng
-            val t = if (len2 == 0.0) 0.0 else (((p.lat - a.lat) * abLat + (p.lng - a.lng) * abLng) / len2).coerceIn(0.0, 1.0)
-            val dLat = p.lat - (a.lat + abLat * t)
-            val dLng = p.lng - (a.lng + abLng * t)
-            val d2 = dLat * dLat + dLng * dLng
-            if (d2 < bestDist2) {
-                bestDist2 = d2
-                bestArc = cum[i] + t * (cum[i + 1] - cum[i])
+            nearestDist = minOf(nearestDist, sqrt(projectOnto(p, i).second))
+        }
+
+        var bestScore = Double.MAX_VALUE
+        var bestArc = prevTraveled.coerceIn(0.0, totalDistance)
+        for (i in 0 until wps.size - 1) {
+            val (candArc, dist2) = projectOnto(p, i)
+            // Spatial-contention gate. For a BACKWARD candidate this is exactly the
+            // "only re-anchor backward if it is within tolerance of the genuine nearest"
+            // rule: a doubling-back route can only pull the cursor back when that point is
+            // essentially the closest.
+            if (sqrt(dist2) > nearestDist + BACKWARD_TOLERANCE_M) continue
+            val cont = candArc - prevTraveled
+            var score = CONTINUITY_WEIGHT * cont * cont + dist2
+            // Forward bias: while driving forward, penalise a backward occurrence extra so
+            // a near-tie resolves forward. Skipped on the ping-pong reverse leg (`forward`
+            // is false there), where moving to a lower arc length is the legitimate motion.
+            if (forward && cont < -EPS) score += CONTINUITY_WEIGHT * cont * cont
+            if (score < bestScore) {
+                bestScore = score
+                bestArc = candArc
             }
         }
         traveled = bestArc.coerceIn(0.0, totalDistance)
+    }
+
+    /**
+     * Clamped projection of [p] onto segment [i]: returns the candidate arc length
+     * (metres from the route start) paired with the squared planar distance, with the
+     * lat/lng residual scaled to METRES so it shares units with the arc length (lets
+     * [CONTINUITY_WEIGHT] and [BACKWARD_TOLERANCE_M] be expressed in plain metres).
+     */
+    private fun projectOnto(
+        p: LatLng,
+        i: Int,
+    ): Pair<Double, Double> {
+        val a = wps[i].pos
+        val b = wps[i + 1].pos
+        val abLat = b.lat - a.lat
+        val abLng = b.lng - a.lng
+        val len2 = abLat * abLat + abLng * abLng
+        val t = if (len2 == 0.0) 0.0 else (((p.lat - a.lat) * abLat + (p.lng - a.lng) * abLng) / len2).coerceIn(0.0, 1.0)
+        val mPerDegLat = EARTH_RADIUS_M * Math.toRadians(1.0)
+        val mPerDegLng = mPerDegLat * cos(Math.toRadians(p.lat))
+        val dLatM = (p.lat - (a.lat + abLat * t)) * mPerDegLat
+        val dLngM = (p.lng - (a.lng + abLng * t)) * mPerDegLng
+        val candArc = cum[i] + t * (cum[i + 1] - cum[i])
+        return candArc to (dLatM * dLatM + dLngM * dLngM)
     }
 
     // ------------------------------------------------------------ driving internals
@@ -432,6 +478,25 @@ class RouteEngine(initial: List<Waypoint> = emptyList()) {
         private const val EPS = 1e-6
         private const val MS_PER_S = 1000.0
         private const val SECONDS_PER_HOUR_OVER_KM = 3.6 // (km/h) / 3.6 = m/s
+
+        /**
+         * Reanchor tunable — weight of arc-length continuity vs spatial closeness when a
+         * mid-run edit re-projects the cursor (both terms are metres², so 1.0 weights them
+         * equally). Increase to keep the cursor stickier to its current arc (more resistant
+         * to teleporting onto a far part of the route); decrease toward a pure
+         * nearest-point snap. See [reanchorTo].
+         */
+        private const val CONTINUITY_WEIGHT = 1.0
+
+        /**
+         * Reanchor tunable — how far (metres) a candidate projection may be beyond the
+         * genuine nearest point and still be considered. This is also the "only re-anchor
+         * BACKWARD if it is essentially the nearest" tolerance (#4539): a route that doubles
+         * back near the cursor may pull the cursor backward only when that backward point is
+         * within this slack of being the closest. Increase to tolerate looser/backward
+         * re-anchors; decrease to demand the re-anchor be almost exactly the nearest point.
+         */
+        private const val BACKWARD_TOLERANCE_M = 5.0
 
         /** Build an engine from bare points (no dwell / overrides). */
         fun fromPoints(points: List<LatLng>): RouteEngine = RouteEngine(points.map { Waypoint(it) })

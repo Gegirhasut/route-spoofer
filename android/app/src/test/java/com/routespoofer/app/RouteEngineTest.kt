@@ -333,4 +333,61 @@ class RouteEngineTest {
         assertEquals(Phase.WAITING_GO, s.phase)
         assertEquals(1, s.holdWaypoint)
     }
+
+    // ============================================================ #4539 continuity-preserving reanchor
+
+    @Test fun doublingBackRoute_midRunEdit_staysNearCursor_noBackwardTeleport() {
+        // The route retraces the SAME line three times, so the cursor's world position lies
+        // on three segments at very different arc lengths. Plain nearest-point projection
+        // would snap to the EARLIEST occurrence (a backward teleport); continuity must keep
+        // the cursor on its current (third) pass.
+        val e = RouteEngine(listOf(Waypoint(pt(0.0, 0.0)), Waypoint(pt(0.0, 2.0)), Waypoint(pt(0.0, 0.0)), Waypoint(pt(0.0, 2.0))))
+        e.go()
+        e.step(555_975L, fast) // 5° east at 1000 m/s -> third pass at (0,1), arc ~5°
+        val before = e.state(fast)
+        assertEquals(5.0 * deg, before.traveled, 1.0)
+        assertEquals(90.0, before.bearing, 1.0) // heading east
+
+        e.moveWaypoint(3, pt(0.0, 2.0001)) // nudge a point AHEAD of the cursor -> triggers reanchor
+        val after = e.state(fast)
+        assertEquals("no backward teleport", before.traveled, after.traveled, 50.0)
+        assertEquals(90.0, after.bearing, 1.0) // still east, not flipped
+        assertEquals(Phase.DRIVING, after.phase)
+    }
+
+    @Test fun midRunEdit_offActiveSegment_keepsCursorAndForwardHeading() {
+        // Drag a point well ahead of the cursor and off-axis: the cursor's own segment is
+        // unchanged, so it must stay exactly put and keep heading forward.
+        val e = RouteEngine(listOf(Waypoint(pt(0.0, 0.0)), Waypoint(pt(0.0, 2.0)), Waypoint(pt(0.0, 4.0)), Waypoint(pt(0.0, 6.0))))
+        e.go()
+        e.step(100_000L, fast) // on segment 0, heading east
+        val before = e.state(fast)
+
+        e.moveWaypoint(3, pt(0.5, 6.0)) // nudge the LAST point off-axis
+        val after = e.state(fast)
+        assertEquals(before.traveled, after.traveled, 1.0) // no shift
+        assertEquals(before.lat, after.lat, 1e-6)
+        assertEquals(before.lng, after.lng, 1e-6)
+        assertEquals(90.0, after.bearing, 1.0) // still forward (east)
+    }
+
+    @Test fun pingpongReverseLeg_midRunEdit_keepsBackwardMotion() {
+        // On the ping-pong reverse leg the cursor legitimately moves to a LOWER arc length;
+        // an edit must not block that (the forward bias is skipped when `forward` is false).
+        val e = RouteEngine(listOf(Waypoint(pt(0.0, 0.0)), Waypoint(pt(0.0, 2.0)), Waypoint(pt(0.0, 4.0))))
+        e.loop = LoopMode.PINGPONG
+        e.go()
+        e.step(450_000L, fast) // reach the end -> turn around
+        e.step(50_000L, fast) // reverse a little
+        val before = e.state(fast)
+        assertTrue("reversing", before.traveled < e.totalDistance)
+
+        e.moveWaypoint(2, pt(0.0, 4.0001)) // edit the end point while reversing
+        val mid = e.state(fast)
+        assertEquals(before.lat, mid.lat, 1e-3) // position preserved across the edit
+        assertEquals(before.lng, mid.lng, 1e-3)
+
+        val after = e.step(50_000L, fast)
+        assertTrue("still reversing after edit", after.traveled < mid.traveled)
+    }
 }
