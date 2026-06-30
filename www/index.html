@@ -1348,19 +1348,68 @@ function openGithub(){ return openExternal(GITHUB_URL); }
 
 /* ---------- map ---------- */
 const KREMLIN = [55.7520, 37.6175];   // default startup center (Moscow Kremlin)
-const map = L.map('map', { zoomControl:false, attributionControl:true }).setView(KREMLIN, 13);
+const map = L.map('map', { zoomControl:false, attributionControl:true });
 map.attributionControl.setPrefix(false);          // remove the Leaflet flag prefix
 L.tileLayer(MAP_TILE_URL, Object.assign({ attribution: MAP_ATTRIBUTION }, MAP_TILE_OPTS)).addTo(map);
 
-/* remember the last map view (center + zoom), independent of the saved route */
+/* ---------- inset-aware centering ----------
+   #map is a full-viewport overlay (Leaflet always sees the whole screen), while the
+   bottom deck and the top hud/search bar paint over it — so the geometric centre lands
+   UNDER the deck. Measure the live occluded heights at call time (auto-reflects the
+   collapsed/expanded deck + safe areas) and centre the target inside the VISIBLE band
+   via fitBounds padding (setView/panTo have no padding in Leaflet 1.9.4). */
+function mapInsets(){
+  const rect = id => { const el = document.getElementById(id); return el ? el.getBoundingClientRect() : null; };
+  const deck = rect('deck'), hud = rect('hud'), search = rect('searchBar');
+  const bottom = deck ? deck.height : 0;
+  // Top occlusion = the lowest bottom-edge among the top overlays. The search bar sits
+  // below the hud, so it usually defines the real occluded top height.
+  const top = Math.max(0, hud ? hud.bottom : 0, search ? search.bottom : 0);
+  return { top, bottom };
+}
+// Centre a single point in the un-occluded band at [zoom]. Degenerate bounds + maxZoom
+// pins the zoom exactly (15 for My-location, 13 for search), and the inset padding lifts
+// the point above the deck.
+function centerOnMap(latlng, zoom, animate){
+  const { top, bottom } = mapInsets();
+  const ll = L.latLng(latlng);
+  map.fitBounds(L.latLngBounds(ll, ll), {
+    maxZoom: zoom,
+    paddingTopLeft: L.point(0, top),
+    paddingBottomRight: L.point(0, bottom),
+    animate: !!animate,
+  });
+}
+// Fit a whole route inside the visible band (same insets, plus geographic breathing room).
+function fitRouteOnMap(latlngs, animate){
+  if(!latlngs || !latlngs.length) return;
+  const { top, bottom } = mapInsets();
+  map.fitBounds(L.latLngBounds(latlngs).pad(.3), {
+    paddingTopLeft: L.point(0, top),
+    paddingBottomRight: L.point(0, bottom),
+    animate: !!animate,
+  });
+}
+// The latlng currently shown at the centre of the VISIBLE band — this is what we persist
+// and restore (via centerOnMap), so a saved view re-centres the same point and never
+// drifts, whatever the deck state was when it was saved.
+function visibleCenterLatLng(){
+  const { top, bottom } = mapInsets();
+  const size = map.getSize();
+  return map.containerPointToLatLng(L.point(size.x / 2, top + (size.y - top - bottom) / 2));
+}
+
+centerOnMap(KREMLIN, 13, false);   // initial default view (Moscow Kremlin), inset-aware
+
+/* remember the last map view (the visible-band centre + zoom), independent of the route */
 const MAPVIEW_KEY = 'rsMapView';
 let mapViewRestored = false, mapViewTimer = null;
 map.on('moveend', () => { clearTimeout(mapViewTimer); mapViewTimer = setTimeout(() => {
-  try{ const c = map.getCenter(); localStorage.setItem(MAPVIEW_KEY, JSON.stringify({ lat:c.lat, lng:c.lng, z:map.getZoom() })); }catch(e){}
+  try{ const c = visibleCenterLatLng(); localStorage.setItem(MAPVIEW_KEY, JSON.stringify({ lat:c.lat, lng:c.lng, z:map.getZoom() })); }catch(e){}
 }, 400); });
 function restoreMapView(){
   try{ const v = JSON.parse(localStorage.getItem(MAPVIEW_KEY)||'null');
-    if(v && isFinite(v.lat) && isFinite(v.lng)){ map.setView([v.lat, v.lng], v.z||12); return true; }
+    if(v && isFinite(v.lat) && isFinite(v.lng)){ centerOnMap([v.lat, v.lng], v.z||12, false); return true; }
   }catch(e){}
   return false;
 }
@@ -1771,10 +1820,10 @@ $('locate').onclick=async ()=>{
   try{
     if(isNative && Geo){
       const p=await Geo.getCurrentPosition({enableHighAccuracy:true, timeout:8000});
-      map.setView([p.coords.latitude,p.coords.longitude],15); flashHint(t('hint.centered'));
+      centerOnMap([p.coords.latitude,p.coords.longitude],15,true); flashHint(t('hint.centered'));
     } else if(navigator.geolocation){
       navigator.geolocation.getCurrentPosition(
-        p=>{ map.setView([p.coords.latitude,p.coords.longitude],15); flashHint(t('hint.centered')); },
+        p=>{ centerOnMap([p.coords.latitude,p.coords.longitude],15,true); flashHint(t('hint.centered')); },
         ()=>flashHint(t('hint.locationDenied')), {enableHighAccuracy:true,timeout:8000});
     } else { flashHint(t('hint.geoUnavailable')); }
   }catch(e){ flashHint(t('hint.locationDenied')); }
@@ -1855,7 +1904,7 @@ function restore(){
     if(Array.isArray(d.waypoints)&&d.waypoints.length){
       S.waypoints=d.waypoints.map(p=>({lat:p.lat,lng:p.lng,dwell:p.dwell||'none',dwellMin:p.dwellMin||2,legSpeed:(p.legSpeed!=null)?p.legSpeed:null}));
       refreshMarkers(); recompute();
-      if(!mapViewRestored) map.fitBounds(L.latLngBounds(S.waypoints.map(p=>[p.lat,p.lng])).pad(.3));
+      if(!mapViewRestored) fitRouteOnMap(S.waypoints.map(p=>[p.lat,p.lng]), false);
       hideHint(); }
   }catch(e){}
 }
@@ -2062,7 +2111,7 @@ const geocode = (function(){
       const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
       const data = await res.json();
       if(Array.isArray(data) && data.length){
-        const r = data[0]; map.setView([+r.lat, +r.lon], 13); hideHint();
+        const r = data[0]; centerOnMap([+r.lat, +r.lon], 13, true); hideHint();
       } else flashHint(t('search.notFound'));
     }catch(e){ flashHint(t('search.error')); }
     finally{ inflight = false; $('searchBar').classList.remove('busy'); }
@@ -2112,7 +2161,7 @@ function loadRouteIntoScene(rt){      // restore full scene, reset to idle, rece
   document.getElementById('railFill').style.width='0%';
   document.getElementById('liveElapsed').textContent='00:00';
   refreshMarkers(); recompute(); renderLiveCoord(sampleAt(0));
-  if(S.waypoints.length){ map.fitBounds(L.latLngBounds(S.waypoints.map(p=>[p.lat,p.lng])).pad(.3)); hideHint(); }  // overrides the remembered view
+  if(S.waypoints.length){ fitRouteOnMap(S.waypoints.map(p=>[p.lat,p.lng]), true); hideHint(); }  // overrides the remembered view
   syncTools(); persist();
 }
 function deleteRoutes(ids){ const set=new Set(ids); saveRoutes(loadRoutes().filter(r=>!set.has(r.id))); ids.forEach(id=>routeSel.delete(id)); renderRoutesList(); }
@@ -2216,9 +2265,9 @@ $('rtFile').onchange = e => {
 
 /* ---------- boot ---------- */
 initLang();
+try{ setDeckCollapsed(localStorage.getItem(DECK_KEY)==='1', false); }catch(e){}  // apply deck state first so centering measures the real insets
 mapViewRestored = restoreMapView();   // a saved view wins over the route's fit-bounds
 restore();
-try{ setDeckCollapsed(localStorage.getItem(DECK_KEY)==='1', false); }catch(e){}
 document.body.dataset.gps='off';
 document.body.dataset.phase='standing';
 $('go').disabled=true;
