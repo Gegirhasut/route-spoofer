@@ -89,6 +89,9 @@ When both rows show ✓, tap the big play button.
 
 ### Using it
 - Tap the map to drop waypoints A → B → C…
+- **Lock route** to guard against accidental edits — while locked, map taps and
+  point drags are ignored so a stray tap can't add or move points. Tap again to
+  unlock. (Routes start unlocked; locking is never automatic.)
 - Set **Speed** (slider/presets), **Emit every** (interval), and **Loop**
   (Off / Restart / Ping-pong).
 - Press **Play**. Open Google Maps (or any consumer app) — it now follows the

@@ -31,8 +31,9 @@ Android only: iOS has no public mock-location API.
   broadcasts that position.
 - **Route building.** Tap the map to drop points (A, B, C…), drag to move them,
   and append new points to the end — even while driving. Any point is editable
-  at any time (no locking); editing the route behind the driver keeps the
-  current position continuous.
+  at any time; editing the route behind the driver keeps the current position
+  continuous. A **Lock route** toggle blocks map taps and point drags so a stray
+  tap can't add or move points by accident — tap again to unlock.
 - **Per-point options** (long-press a point): **wait N minutes** (auto-resume),
   **wait until GO**, a **custom speed** for the leg ending at that point, and
   **remove**.
