@@ -8,12 +8,12 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.location.LocationManager
 import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
 import android.os.SystemClock
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import org.json.JSONArray
@@ -61,8 +61,7 @@ class MockLocationService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        val lm = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        injector = MockLocationInjector(lm)
+        injector = MockLocationInjector(applicationContext)
         createChannel()
     }
 
@@ -102,7 +101,11 @@ class MockLocationService : Service() {
         if (gpsOn) return
         gpsOn = true
         startInForeground()
-        injector.setup()
+        if (!injector.setup()) {
+            // Surface (don't silently no-op): the LM test providers did not register,
+            // typically because the app is not the selected mock-location app.
+            Log.w(TAG, "Mock providers did not fully initialize on start")
+        }
         lastTick = SystemClock.elapsedRealtime()
         tick()
         handler.removeCallbacks(tickRunnable)
@@ -291,6 +294,7 @@ class MockLocationService : Service() {
         const val EXTRA_DWELL_MS = "dwellMs"
         const val EXTRA_LEG_SPEED = "legSpeedKmh"
 
+        private const val TAG = "MockLocationService"
         private const val CHANNEL_ID = "route_spoofer_mock"
         private const val NOTIF_ID = 4711
         private const val MIN_INTERVAL_MS = 50L
