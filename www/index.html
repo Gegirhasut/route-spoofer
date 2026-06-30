@@ -1318,22 +1318,29 @@ async function copyToClipboard(text){
     const ok=document.execCommand('copy'); document.body.removeChild(ta); return ok;
   }catch(e){ console.warn('execCommand copy failed',e); return false; }
 }
-// Never throws. Tries every safe open path, then degrades to copy + a toast,
-// so no external link can ever crash or close the app.
+// Never throws and never a dead tap (#4520): tries each opener in order, only ever
+// returns true on a CONFIRMED open, and otherwise degrades to copy + a visible hint.
 async function openExternal(url){
   try{
     if(isNative){
-      // Native ACTION_VIEW is guarded in Kotlin (catches ActivityNotFoundException),
-      // so it can't crash even with no/disabled default browser. Avoid window.open
-      // '_system' on native — that is the path that throws natively and kills the app.
+      // (a) PRIMARY — Custom Tab (@capacitor/browser). An in-app browser tab that does
+      //     NOT depend on a user-set default browser, so it survives the ColorOS/Android 10
+      //     implicit-ACTION_VIEW suppression that used to silently dead-tap this button.
+      if(Browser && Browser.open){
+        try{ await Browser.open({ url }); return true; }
+        catch(e){ console.warn('Browser.open failed',e); }
+      }
+      // (b) Native ACTION_VIEW — now reports opened:true ONLY when a handler resolved AND
+      //     the launch was actually issued (no false positive on silent suppression).
       if(FakeGps && FakeGps.openUrl){
         try{ const r=await FakeGps.openUrl({ url }); if(r && r.opened) return true; }
         catch(e){ console.warn('native openUrl failed',e); }
       }
-      // Secondary: @capacitor/browser Custom Tab, if that plugin is ever bundled.
-      if(Browser && Browser.open){
-        try{ await Browser.open({ url }); return true; }
-        catch(e){ console.warn('Browser.open failed',e); }
+      // (c) Android share sheet (@capacitor/share) — resolves on virtually any device,
+      //     incl. ColorOS. Completing it counts as a successful open.
+      if(Share && Share.share){
+        try{ await Share.share({ url, title:t('about.github'), text:url }); return true; }
+        catch(e){ console.warn('share dismissed/failed',e); }   // fall through to copy+hint
       }
     } else {
       // Web / desktop preview.
@@ -1343,7 +1350,8 @@ async function openExternal(url){
       catch(e){ console.warn('location.href failed',e); }
     }
   }catch(e){ console.warn('openExternal failed',e); }
-  // Last resort: copy the URL and show a non-blocking message — never crash.
+  // (d) Terminal fallback — copy the URL and show a clearly visible message. The hint
+  //     renders above the deck (raised z-index from #4535), so the user always sees it.
   const copied=await copyToClipboard(url);
   flashHint(t(copied ? 'link.openFailCopied' : 'link.openFail').replace('{url}', url));
   return false;

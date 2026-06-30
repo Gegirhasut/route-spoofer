@@ -10,6 +10,7 @@ import android.location.LocationManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.getcapacitor.JSObject
 import com.getcapacitor.PermissionState
@@ -346,17 +347,35 @@ class FakeGpsPlugin : Plugin() {
             call.resolve(JSObject().put("opened", false))
             return
         }
-        val opened =
-            try {
-                val intent =
-                    Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        call.resolve(JSObject().put("opened", launchView(url)))
+    }
+
+    /**
+     * Launch an external ACTION_VIEW for [url] and report an HONEST result: true ONLY when
+     * a handler actually resolves AND the launch is issued from a valid path. A launch the
+     * OS silently suppresses (ColorOS / Android 10 background-activity-start) without
+     * throwing must NOT be reported as success, so the web layer can fall back (#4520).
+     * Prefers a true foreground start from the Activity; uses the app context + NEW_TASK
+     * only when no Activity is attached.
+     */
+    private fun launchView(url: String): Boolean {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        val host = activity
+        return try {
+            if (host != null) {
+                if (intent.resolveActivity(host.packageManager) == null) return false
+                host.startActivity(intent) // real foreground start (no NEW_TASK off an Activity)
+                true
+            } else {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (intent.resolveActivity(context.packageManager) == null) return false
                 context.startActivity(intent)
                 true
-            } catch (e: Exception) {
-                false
             }
-        call.resolve(JSObject().put("opened", opened))
+        } catch (e: Exception) {
+            Log.w(TAG, "openUrl: could not open $url", e)
+            false
+        }
     }
 
     // ----------------------------------------------------------------- helpers
@@ -430,6 +449,7 @@ class FakeGpsPlugin : Plugin() {
     }
 
     companion object {
+        private const val TAG = "FakeGpsPlugin"
         private const val PROBE_PROVIDER = "route-spoofer-probe"
         private const val DEV_CHANNEL_ID = "route_spoofer_devopts"
         private const val DEV_NOTIF_ID = 4712
