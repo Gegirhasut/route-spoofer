@@ -348,7 +348,10 @@
     transform-origin:50% 100%; margin:-13px 0 0 -5px;}
 
   .hint{
-    position:absolute; z-index:590; left:50%; top:calc(env(safe-area-inset-top) + 102px); transform:translateX(-50%);
+    /* Above every modal layer (max is .wpmenu at 1200) so a transient message is
+       never hidden behind an open popup (#4535). Safe to stack on top because the
+       hint is pointer-events:none and only visible while opacity is toggled to 1. */
+    position:absolute; z-index:1300; left:50%; top:calc(env(safe-area-inset-top) + 102px); transform:translateX(-50%);
     background:var(--panel); border:1px solid var(--line-2); color:var(--muted);
     font:500 12px/1 var(--sans); padding:9px 14px; border-radius:99px; pointer-events:none;
     box-shadow:0 6px 20px rgba(0,0,0,.4); white-space:nowrap; transition:opacity .3s; max-width:calc(100% - 24px);
@@ -778,7 +781,7 @@
         </div>
         <div id="rtList" class="rt-list"></div>
         <div class="rt-foot">
-          <button id="rtExportAll" class="rt-mini" data-i18n="routes.exportAll">Export all</button>
+          <button id="rtExportAll" class="rt-mini" data-i18n="routes.exportAll" disabled>Export all</button>
           <button id="rtImport" class="rt-mini" data-i18n="routes.import">Import</button>
           <button id="rtDeleteAll" class="rt-mini danger" data-i18n="routes.deleteAll">Delete all</button>
         </div>
@@ -2166,6 +2169,7 @@ function updateRoutesBar(){
   $('rtCount').textContent = n + ' ' + t('routes.selected');
   $('rtSelAll').textContent = (all.length>0 && n>=all.length) ? t('routes.clearSel') : t('routes.selectAll');
   $('rtExportSel').disabled = n<1; $('rtDelSel').disabled = n<1;
+  $('rtExportAll').disabled = all.length===0;   // nothing to export when empty (#4535)
 }
 function renderRoutesList(){
   const all=loadRoutes(); for(const id of [...routeSel]) if(!all.some(r=>r.id===id)) routeSel.delete(id);
@@ -2199,7 +2203,7 @@ $('rtSave').onclick = saveCurrentRoute;
 $('rtSelAll').onclick = () => { const all=loadRoutes(); if(all.length>0 && routeSel.size>=all.length){ routeSel.clear(); } else { all.forEach(r=>routeSel.add(r.id)); } renderRoutesList(); };
 $('rtDelSel').onclick = () => { if(!routeSel.size) return; if(confirm(t('routes.confirmDelSel'))) deleteRoutes([...routeSel]); };
 $('rtExportSel').onclick = () => { const sel=loadRoutes().filter(r=>routeSel.has(r.id)); if(!sel.length){ flashHint(t('routes.noneSelected')); return; } exportRoutes(sel); };
-$('rtExportAll').onclick = () => { const all=loadRoutes(); if(!all.length){ flashHint(t('routes.empty')); return; } exportRoutes(all); };
+$('rtExportAll').onclick = () => { const all=loadRoutes(); if(!all.length) return; exportRoutes(all); };   // button is disabled when empty (#4535)
 $('rtDeleteAll').onclick = () => { if(!loadRoutes().length) return; if(confirm(t('routes.confirmDelAll'))){ saveRoutes([]); routeSel.clear(); renderRoutesList(); } };
 $('rtImport').onclick = () => $('rtFile').click();
 $('rtFile').onchange = e => {
