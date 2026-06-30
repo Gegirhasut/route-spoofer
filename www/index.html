@@ -124,7 +124,8 @@
     display:grid;place-items:center; transition:.15s;
   }
   .stopbtn:active{transform:scale(.94)}
-  .stopbtn:hover{color:var(--stop); border-color:var(--stop)}
+  .stopbtn:hover:not(:disabled){color:var(--stop); border-color:var(--stop)}
+  .stopbtn:disabled{opacity:.4; cursor:default}
   .stopbtn svg{width:15px;height:15px;fill:currentColor}
 
   /* waypoint long-press menu */
@@ -474,7 +475,7 @@
           <span><span data-i18n="live.elapsed">elapsed</span> <em id="liveElapsed">00:00</em></span>
         </div>
       </div>
-      <button class="stopbtn" id="stop" data-i18n-title="title.stop" title="Stop & reset to start">
+      <button class="stopbtn" id="stop" data-i18n-title="title.stop" title="Stop & reset to start" disabled>
         <svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
       </button>
     </div>
@@ -1385,6 +1386,10 @@ const S = {
   bearingEl: null,
 };
 const isDriving = () => S.phase === 'driving';
+// A run exists to stop whenever playback is past the idle/parked state.
+// 'standing' is the only idle phase (pause uses waiting_go; turning GPS off
+// mid-run leaves the phase intact) — so this is independent of GPS state.
+const isPlaybackActive = () => S.phase !== 'standing';
 
 /* ---------- geo math (mirrors the native Kotlin interpolation) ---------- */
 const R = 6371000;
@@ -1633,6 +1638,7 @@ async function pressGo(){
   if(!isNative) applyDrive(PV.snapshot());
 }
 function pressStop(){
+  if(!isPlaybackActive()) return;   // nothing running/paused — Stop is a no-op when idle
   if(isNative){ try{ FakeGps.stop(); }catch(e){ console.warn(e);} }
   else { PV.resetCursor(); applyDrive(PV.snapshot()); }
 }
@@ -1775,6 +1781,10 @@ function syncTools(){
   $('undo').disabled = n===0 || !building;
   $('clear').disabled = n===0 || !building;
   $('reverse').disabled = n<2 || !building;
+  // Stop reflects whether there's a running/paused simulation to stop — gated on
+  // playback state only, never on GPS (#4527): a run stays stoppable even if GPS
+  // is switched off mid-playback.
+  $('stop').disabled = !isPlaybackActive();
 }
 // open / closed padlock glyphs — swapped to reflect the lock state
 const LOCK_OPEN_PATH='M12 17a2 2 0 002-2 2 2 0 00-2-2 2 2 0 00-2 2 2 2 0 002 2zm6-9h-9V6a3.1 3.1 0 016.2 0h1.8A5 5 0 007 6v2H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V10a2 2 0 00-2-2z';
