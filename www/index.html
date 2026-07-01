@@ -567,7 +567,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.1.0</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.1.1</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -796,6 +796,10 @@
 
 <script>
 "use strict";
+/* Nullish fallback that also parses on pre-Chromium-80 WebViews (Android 8.x
+   with an un-updated System WebView), where `??` / `?.` are syntax errors that
+   would abort this whole inline script — leaving every control dead. */
+function nz(v, d){ return v == null ? d : v; }
 /* =====================================================================
    Route Spoofer — fake-GPS route player
    ---------------------------------------------------------------------
@@ -1743,7 +1747,7 @@ function moveEmitter(fix){
   if(!fix) return;
   if(!S.emitMarker) ensureEmitter();
   S.emitMarker.setLatLng([fix.lat,fix.lng]);
-  const b=S.emitMarker.getElement()?.querySelector('.bearing');
+  const mEl=S.emitMarker.getElement(); const b=mEl && mEl.querySelector('.bearing');
   if(b) b.style.transform=`rotate(${fix.brg}deg)`;
 }
 
@@ -1897,7 +1901,9 @@ $('wpmRemove').onclick=()=>{ const i=wpMenuIdx; closeWpMenu(); if(i>=0) removeWa
 /* ---------- hint ---------- */
 let hintTimer;
 function flashHint(msg){ const h=$('hint'); h.textContent=msg; h.style.opacity='1'; clearTimeout(hintTimer); hintTimer=setTimeout(refreshHint,2200); }
-function showHint(){ const h=$('hint'); h.textContent=t('hint.tapMap'); h.style.opacity='1'; }
+// the empty-state hint floats above the map (high z-index); any full-screen sheet must win.
+function anyOverlayOpen(){ return !!document.querySelector('#help.show,#routes.show,#setup.show,#devhelp.show,#mockhelp.show'); }
+function showHint(){ if(anyOverlayOpen()) return; const h=$('hint'); h.textContent=t('hint.tapMap'); h.style.opacity='1'; }
 function hideHint(){ clearTimeout(hintTimer); $('hint').style.opacity='0'; }
 // the empty-state "tap the map" hint is driven purely by state: shown whenever the route is empty
 function refreshHint(){ if(S.waypoints.length===0) showHint(); else hideHint(); }
@@ -1908,7 +1914,7 @@ function persist(){ try{ localStorage.setItem('routeSpoofer', JSON.stringify({
 function restore(){
   try{
     const d=JSON.parse(localStorage.getItem('routeSpoofer')||'null'); if(!d)return;
-    S.speed=d.speed??40; S.rateMs=d.rateMs??1000; S.loop=d.loop??'off';
+    S.speed=nz(d.speed,40); S.rateMs=nz(d.rateMs,1000); S.loop=nz(d.loop,'off');
     $('spd').value=S.speed; $('spdVal').textContent=S.speed+' km/h';
     document.querySelectorAll('#spdPresets button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.speed));
     $('rate').value=S.rateMs/1000; $('rateVal').textContent=(S.rateMs/1000).toFixed(1)+' s'; $('liveRate').textContent=(S.rateMs/1000).toFixed(1)+'s';
@@ -1958,10 +1964,10 @@ function paintReady(st){
     if(permOk && mockOk && $('setup').classList.contains('show')){ closeSetup(); flashHint(t('hint.ready')); }
   }
 }
-function openSetup(){ refreshReady(); $('setup').classList.add('show'); }
-function closeSetup(){ $('setup').classList.remove('show'); }
-function openDevHelp(){ $('devhelp').classList.add('show'); }
-function closeDevHelp(){ $('devhelp').classList.remove('show'); }
+function openSetup(){ refreshReady(); $('setup').classList.add('show'); hideHint(); }
+function closeSetup(){ $('setup').classList.remove('show'); refreshHint(); }
+function openDevHelp(){ $('devhelp').classList.add('show'); hideHint(); }
+function closeDevHelp(){ $('devhelp').classList.remove('show'); refreshHint(); }
 
 /* ---- shared step-2 ("Select mock location app") instructions ----
    Cloned from #mockStepsTpl into BOTH the info "?" page and the step-2 modal,
@@ -1972,8 +1978,8 @@ function renderMockSteps(){
     const el=$(id); if(el && !el.childElementCount) el.appendChild(tpl.content.cloneNode(true));
   });
 }
-function openMockHelp(){ renderMockSteps(); $('mockhelp').classList.add('show'); }
-function closeMockHelp(){ $('mockhelp').classList.remove('show'); }
+function openMockHelp(){ renderMockSteps(); $('mockhelp').classList.add('show'); hideHint(); }
+function closeMockHelp(){ $('mockhelp').classList.remove('show'); refreshHint(); }
 
 /* ---- small UI helpers for Re-check feedback (FIX 3) ---- */
 const delay = ms => new Promise(r=>setTimeout(r,ms));
@@ -2073,8 +2079,8 @@ document.addEventListener('click', e=>{
 }, true);
 
 /* ---------- help / legend modal (button-only; never auto-shown) ---------- */
-function openHelp(){ $('help').classList.add('show'); }
-function closeHelp(){ $('help').classList.remove('show'); }
+function openHelp(){ $('help').classList.add('show'); hideHint(); }
+function closeHelp(){ $('help').classList.remove('show'); refreshHint(); }
 $('btnHelp').onclick = openHelp;
 $('helpClose').onclick = closeHelp;
 $('help').onclick = e => { if(e.target.id==='help') closeHelp(); };   // tap backdrop closes
@@ -2139,7 +2145,7 @@ function rid(){ return 'r' + Date.now().toString(36) + Math.random().toString(36
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function normRoute(r){
   return { id:r.id||rid(), name:String(r.name||'Route'),
-    waypoints:Array.isArray(r.waypoints)?r.waypoints:[], speed:r.speed??40, rateMs:r.rateMs??1000, loop:r.loop||'off' };
+    waypoints:Array.isArray(r.waypoints)?r.waypoints:[], speed:nz(r.speed,40), rateMs:nz(r.rateMs,1000), loop:r.loop||'off' };
 }
 function loadRoutes(){ try{ const a=JSON.parse(localStorage.getItem(ROUTES_KEY)||'[]'); return Array.isArray(a)?a.map(normRoute):[]; }catch(e){ return []; } }
 function saveRoutes(a){ try{ localStorage.setItem(ROUTES_KEY, JSON.stringify(a)); }catch(e){} }
@@ -2161,7 +2167,7 @@ function saveCurrentRoute(){
 function loadRouteIntoScene(rt){      // restore full scene, reset to idle, recenter to its bounds
   if(S.gpsOn) gpsTurnOff();
   S.waypoints = cleanWaypoints(rt.waypoints);
-  S.speed = rt.speed??40; S.rateMs = rt.rateMs??1000; S.loop = rt.loop||'off';
+  S.speed = nz(rt.speed,40); S.rateMs = nz(rt.rateMs,1000); S.loop = rt.loop||'off';
   S.traveled = 0; S.phase = 'standing';
   $('spd').value=S.speed; $('spdVal').textContent=S.speed+' km/h';
   document.querySelectorAll('#spdPresets button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.speed));
@@ -2219,7 +2225,7 @@ function importRoutesFromText(txt){
     if(!wps.length){ skipped++; continue; }
     if(a.length>=ROUTES_CAP){ skipped++; continue; }
     a.push({ id:rid(), name:uniqueName((String(raw.name||'Route').trim())||'Route', a.map(r=>r.name)),
-      waypoints:wps, speed:raw.speed??40, rateMs:raw.rateMs??1000, loop:raw.loop||'off' });
+      waypoints:wps, speed:nz(raw.speed,40), rateMs:nz(raw.rateMs,1000), loop:raw.loop||'off' });
     imported++;
   }
   saveRoutes(a); renderRoutesList();
@@ -2254,8 +2260,8 @@ function renderRoutesList(){
   });
   updateRoutesBar();
 }
-function openRoutes(){ routeSel.clear(); $('rtSearch').value=''; $('rtSave').disabled = S.waypoints.length<1; renderRoutesList(); $('routes').classList.add('show'); }
-function closeRoutes(){ $('routes').classList.remove('show'); }
+function openRoutes(){ routeSel.clear(); $('rtSearch').value=''; $('rtSave').disabled = S.waypoints.length<1; renderRoutesList(); $('routes').classList.add('show'); hideHint(); }
+function closeRoutes(){ $('routes').classList.remove('show'); refreshHint(); }
 $('btnRoutes').onclick = openRoutes;
 $('rtClose').onclick = closeRoutes;
 $('routes').onclick = e => { if(e.target.id==='routes') closeRoutes(); };

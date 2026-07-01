@@ -2,10 +2,10 @@
   "root": true,
   "env": {
     "browser": true,
-    "es2021": true
+    "es2019": true
   },
   "parserOptions": {
-    "ecmaVersion": 2021,
+    "ecmaVersion": 2019,
     "sourceType": "script"
   },
   "plugins": ["html"],
@@ -17,6 +17,21 @@
   "rules": {
     "no-unused-vars": ["warn", { "args": "none" }],
     "no-empty": ["warn", { "allowEmptyCatch": true }],
-    "no-constant-condition": ["error", { "checkLoops": false }]
+    "no-constant-condition": ["error", { "checkLoops": false }],
+    "no-restricted-globals": [
+      "error",
+      { "name": "globalThis", "message": "globalThis is Chrome 71+. Old WebViews (Android 8.1 / J7 Prime) lack it — use `window` or a `typeof globalThis` guard." }
+    ],
+    "no-restricted-properties": [
+      "error",
+      { "object": "Object", "property": "fromEntries", "message": "Object.fromEntries is Chrome 73+. Reduce into an object instead — old WebViews will throw." },
+      { "object": "Promise", "property": "allSettled", "message": "Promise.allSettled is Chrome 76+. Not available on old WebViews." },
+      { "object": "Promise", "property": "any", "message": "Promise.any is Chrome 85+. Not available on old WebViews." },
+      { "property": "flat", "message": "Array.prototype.flat is Chrome 69+. Use [].concat(...arr) — old WebViews will throw." },
+      { "property": "flatMap", "message": "Array.prototype.flatMap is Chrome 69+. Use map(...).concat-reduce — old WebViews will throw." },
+      { "property": "matchAll", "message": "String.prototype.matchAll is Chrome 73+. Use a global-regex exec loop — old WebViews will throw." },
+      { "property": "replaceAll", "message": "String.prototype.replaceAll is Chrome 85+. Use split(a).join(b) for plain strings — old WebViews will throw." },
+      { "property": "at", "message": "Array/String.prototype.at is Chrome 92+. Use arr[arr.length-1] — old WebViews will throw." }
+    ]
   }
 }
