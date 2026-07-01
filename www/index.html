@@ -385,6 +385,7 @@
   .setup-card h2{margin:0 0 4px; font:700 16px/1.2 var(--sans); color:var(--text); display:flex; align-items:center; gap:8px}
   .setup-card h2 svg{width:18px;height:18px;fill:var(--signal)}
   .setup-card p{margin:0 0 12px; font:500 12px/1.5 var(--sans); color:var(--muted)}
+  .setup-ver{margin:0 0 10px 26px; font:600 11px/1 var(--mono); letter-spacing:.03em; color:var(--muted); opacity:.85}
   .check{display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid var(--line)}
   .check .ic{flex:none; width:20px;height:20px;border-radius:50%; display:grid;place-items:center; margin-top:1px;
     font:700 12px/1 var(--mono); background:var(--panel-2); border:1px solid var(--line-2); color:var(--muted)}
@@ -575,6 +576,7 @@
   <div id="setup">
     <div class="setup-card">
       <h2><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3z"/></svg> <span data-i18n="setup.title">Enable mock GPS</span></h2>
+      <div class="setup-ver" id="setupVersion" aria-label="App version"></div>
       <p data-i18n="setup.intro">Route Spoofer needs two things before it can drive your device location.</p>
       <div class="check" id="chkPerm">
         <div class="ic">1</div>
@@ -2290,6 +2292,7 @@ document.body.dataset.gps='off';
 document.body.dataset.phase='standing';
 $('go').disabled=true;
 renderMockSteps();           // clone shared step-2 instructions into both render targets…
+$('setupVersion').textContent = $('appVersion').textContent;   // mirror the footer build version onto the permissions screen (single source of truth)
 applyI18n();                 // …then localize the static UI (incl. those clones) before first paint
 renderLiveCoord(sampleAt(0));
 paintHud();
