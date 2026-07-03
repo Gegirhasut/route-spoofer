@@ -76,7 +76,10 @@ class MockLocationService : Service() {
             ACTION_SET_ROUTE -> setRoute(intent)
             ACTION_GO -> engine.go()
             ACTION_PAUSE -> engine.pause()
-            ACTION_STOP -> { engine.stop(); elapsedMs = 0 }
+            ACTION_STOP -> {
+                engine.stop()
+                elapsedMs = 0
+            }
             ACTION_SET_SPEED -> speedKmh = intent.getDoubleExtra(EXTRA_SPEED, speedKmh)
             ACTION_SET_INTERVAL -> intervalMs = max(MIN_INTERVAL_MS, intent.getLongExtra(EXTRA_INTERVAL, intervalMs))
             ACTION_SET_LOOP -> engine.loop = LoopMode.fromId(intent.getStringExtra(EXTRA_LOOP))
