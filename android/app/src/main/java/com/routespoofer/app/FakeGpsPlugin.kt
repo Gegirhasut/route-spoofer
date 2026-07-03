@@ -394,12 +394,19 @@ class FakeGpsPlugin : Plugin() {
     private fun postDevOptionsNotice() {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // The old channel badged the launcher icon (#4562); a channel's badge
+            // setting can't be changed once created, so drop the legacy one and
+            // recreate under a new id with badging off.
+            nm.deleteNotificationChannel(LEGACY_DEV_CHANNEL_ID)
             val ch =
                 NotificationChannel(
                     DEV_CHANNEL_ID,
                     context.getString(R.string.devnotif_channel),
                     NotificationManager.IMPORTANCE_LOW,
-                ).apply { description = context.getString(R.string.devnotif_channel_desc) }
+                ).apply {
+                    description = context.getString(R.string.devnotif_channel_desc)
+                    setShowBadge(false)
+                }
             nm.createNotificationChannel(ch)
         }
         val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
@@ -419,6 +426,8 @@ class FakeGpsPlugin : Plugin() {
                 .setOngoing(false)
                 .setAutoCancel(true)
                 .setContentIntent(pi)
+                .setNumber(0)
+                .setBadgeIconType(NotificationCompat.BADGE_ICON_NONE)
                 .build()
         try {
             nm.notify(DEV_NOTIF_ID, notif)
@@ -451,7 +460,8 @@ class FakeGpsPlugin : Plugin() {
     companion object {
         private const val TAG = "FakeGpsPlugin"
         private const val PROBE_PROVIDER = "route-spoofer-probe"
-        private const val DEV_CHANNEL_ID = "route_spoofer_devopts"
+        private const val DEV_CHANNEL_ID = "route_spoofer_devopts2"
+        private const val LEGACY_DEV_CHANNEL_ID = "route_spoofer_devopts"
         private const val DEV_NOTIF_ID = 4712
         private const val DEFAULT_SPEED = 40.0
         private const val DEFAULT_INTERVAL = 1000

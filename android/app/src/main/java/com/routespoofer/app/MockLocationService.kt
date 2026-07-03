@@ -245,6 +245,8 @@ class MockLocationService : Service() {
             .setSmallIcon(android.R.drawable.ic_menu_mylocation)
             .setOngoing(true)
             .setContentIntent(pi)
+            .setNumber(0)
+            .setBadgeIconType(NotificationCompat.BADGE_ICON_NONE)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
     }
@@ -257,13 +259,20 @@ class MockLocationService : Service() {
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            // The old channel badged the launcher icon (#4562); a channel's badge
+            // setting is immutable once created, so drop the legacy one and recreate
+            // under a new id with badging off.
+            nm.deleteNotificationChannel(LEGACY_CHANNEL_ID)
             val ch =
                 NotificationChannel(
                     CHANNEL_ID,
                     getString(R.string.app_name),
                     NotificationManager.IMPORTANCE_LOW,
-                ).apply { description = getString(R.string.notif_channel_desc) }
-            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                ).apply {
+                    description = getString(R.string.notif_channel_desc)
+                    setShowBadge(false)
+                }
             nm.createNotificationChannel(ch)
         }
     }
@@ -295,7 +304,8 @@ class MockLocationService : Service() {
         const val EXTRA_LEG_SPEED = "legSpeedKmh"
 
         private const val TAG = "MockLocationService"
-        private const val CHANNEL_ID = "route_spoofer_mock"
+        private const val CHANNEL_ID = "route_spoofer_mock2"
+        private const val LEGACY_CHANNEL_ID = "route_spoofer_mock"
         private const val NOTIF_ID = 4711
         private const val MIN_INTERVAL_MS = 50L
         private const val MS_PER_KMH = 3.6
