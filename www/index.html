@@ -1659,7 +1659,7 @@ const PV = (function(){
     stop(){ running=false; },
     go(){ if(S.waypoints.length<2){ phase='standing'; return; } if(phase==='arrived'&&traveled>=S.total-EPS) return; resume(); },
     pauseDrive(){ if(phase==='driving'){ phase='waiting_go'; holdWaypoint=curWp(); } },
-    resetCursor(){ traveled=0; phase='standing'; forward=true; holdRemainingMs=0; holdWaypoint=-1; },
+    resetCursor(){ traveled=0; phase='standing'; forward=true; holdRemainingMs=0; holdWaypoint=-1; S.elapsedMs=0; },
     snapshot, worldPos, reanchor,
   };
 })();
