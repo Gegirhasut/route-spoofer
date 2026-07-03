@@ -166,8 +166,9 @@
 
   .seg{display:flex; background:var(--panel-2); border:1px solid var(--line); border-radius:9px; padding:3px; gap:3px}
   .seg button{
-    flex:1; font:600 11px/1 var(--sans); padding:8px 4px; border-radius:6px; cursor:pointer;
-    background:transparent; border:0; color:var(--muted); transition:.12s; white-space:nowrap;
+    flex:1; min-width:0; font:600 11px/1.15 var(--sans); padding:7px 4px; border-radius:6px; cursor:pointer;
+    background:transparent; border:0; color:var(--muted); transition:.12s;
+    text-align:center; overflow-wrap:break-word; hyphens:auto;
   }
   .seg button.on{background:var(--signal); color:var(--signal-ink)}
 
