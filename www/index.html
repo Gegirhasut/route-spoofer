@@ -375,6 +375,13 @@
   #searchInput{flex:1; min-width:0; background:none; border:0; outline:none; color:var(--text); font:500 13px/1 var(--sans)}
   #searchInput::placeholder{color:var(--muted)}
   #searchInput::-webkit-search-cancel-button{filter:invert(.6)}
+  /* When the place-search field is focused the soft keyboard resizes the WebView
+     and the bottom deck rides up over the map, colliding with the search field and
+     the empty-state hint (#4568). While searching, slide the deck out of the way and
+     hide the hint so the search stays clear. Reverses on blur — deck state untouched. */
+  #deck{transition:transform .2s ease}
+  body.searching #deck{transform:translateY(120%); pointer-events:none}
+  body.searching .hint{opacity:0 !important}
 
   /* ---------- setup / readiness card ---------- */
   #setup,#devhelp,#mockhelp{
@@ -2159,6 +2166,9 @@ const geocode = (function(){
   return q => { clearTimeout(timer); timer = setTimeout(()=>run(q.trim()), 350); };   // debounced
 })();
 $('searchBar').addEventListener('submit', e => { e.preventDefault(); geocode($('searchInput').value); $('searchInput').blur(); });
+// keyboard-up layout: while the search field is focused, slide the deck away (see .searching CSS)
+$('searchInput').addEventListener('focus', () => document.body.classList.add('searching'));
+$('searchInput').addEventListener('blur',  () => document.body.classList.remove('searching'));
 
 /* ---------- saved routes (presets) ---------- */
 const ROUTES_KEY = 'rsRoutes', ROUTES_CAP = 50, ROUTES_WRAP = { app:'route-spoofer', type:'routes', version:1 };
