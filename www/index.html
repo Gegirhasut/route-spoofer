@@ -43,9 +43,9 @@
     pointer-events:none;
   }
   .state-pill{
-    pointer-events:auto; display:inline-flex; align-items:center; gap:7px;
-    font:600 11px/1 var(--sans); letter-spacing:.12em; text-transform:uppercase;
-    padding:7px 11px; border-radius:999px; border:1px solid var(--line-2);
+    pointer-events:auto; display:inline-flex; align-items:center; gap:9px;
+    font:600 11px/1 var(--sans); letter-spacing:.1em; text-transform:uppercase;
+    padding:7px 12px 7px 11px; border-radius:999px; border:1px solid var(--line-2);
     background:var(--panel); color:var(--muted); white-space:nowrap; flex:none;
   }
   .state-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
@@ -55,8 +55,13 @@
   body[data-state="paused"] .state-pill .dot{background:var(--signal)}
   @keyframes blink{50%{opacity:.25}}
 
-  .chips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; flex:1}
+  .chips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; flex:1; --fade:20px}
   .chips::-webkit-scrollbar{display:none}
+  /* fade the edge that has more off-screen chips, so the clipped value reads as
+     "scroll for more" rather than a broken cut-off (narrow phones can't fit all 4) */
+  .chips[data-of="right"]{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - var(--fade)),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - var(--fade)),transparent)}
+  .chips[data-of="left"]{-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fade));mask-image:linear-gradient(90deg,transparent,#000 var(--fade))}
+  .chips[data-of="both"]{-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fade),#000 calc(100% - var(--fade)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fade),#000 calc(100% - var(--fade)),transparent)}
   .chip{
     pointer-events:auto; flex:none; background:var(--panel); border:1px solid var(--line);
     border-radius:8px; padding:5px 9px; min-width:64px;
@@ -569,7 +574,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.1.3</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.1.4</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -1303,6 +1308,7 @@ function applyI18n(){
   const rt=document.getElementById('routes'); if(rt && rt.classList.contains('show')) renderRoutesList();   // re-translate the open routes modal
   if(lastReady) paintReady(lastReady);   // re-apply state-driven button labels/variants after re-translate
   syncLock();                            // lock toggle label/icon switch by state, not a plain data-i18n node
+  updateChipFade();                      // localized labels change chip widths → re-evaluate the scroll fade
 }
 function initLang(){
   const pref = storedLangPref();
@@ -1585,6 +1591,17 @@ function statusText(){
     default: return t('status.standing');
   }
 }
+// HUD stat chips scroll horizontally on narrow phones; fade whichever edge still
+// has off-screen chips so a clipped value reads as "scroll for more", not a bug.
+function updateChipFade(){
+  const el = document.querySelector('.chips');
+  if(!el) return;
+  const more = el.scrollWidth - el.clientWidth;
+  if(more <= 1){ el.removeAttribute('data-of'); return; }
+  const atStart = el.scrollLeft <= 1;
+  const atEnd   = el.scrollLeft >= more - 1;
+  el.dataset.of = atStart ? 'right' : atEnd ? 'left' : 'both';
+}
 function paintLive(st){
   const spd = (st.speedKmh!=null) ? st.speedKmh : (isDriving()?S.speed:0);
   document.getElementById('cSpd').textContent=(+spd).toFixed(1);
@@ -1593,6 +1610,7 @@ function paintLive(st){
   const prg = Math.round(((st.progress!=null)?st.progress:(S.total?S.traveled/S.total:0))*100);
   document.getElementById('cPrg').textContent=prg+'%';
   document.getElementById('cDst').textContent=(S.total/1000).toFixed(2)+' km';
+  updateChipFade();
   document.getElementById('railFill').style.width=prg+'%';
   document.getElementById('liveSeg').textContent=(((st.seg!=null)?st.seg:0)+1)+'/'+Math.max(0,S.waypoints.length-1);
   renderLiveCoord({lat:st.lat,lng:st.lng});
@@ -1762,6 +1780,7 @@ function paintHud(){
   const prg=S.total? Math.round(S.traveled/S.total*100):0;
   document.getElementById('cPrg').textContent=prg+'%';
   document.getElementById('cDst').textContent=(S.total/1000).toFixed(2)+' km';
+  updateChipFade();
   document.getElementById('railFill').style.width=prg+'%';
   document.getElementById('liveSeg').textContent=(fix?fix.seg+1:0)+'/'+Math.max(0,S.waypoints.length-1);
   renderLiveCoord(fix);
@@ -2297,6 +2316,13 @@ $('setupVersion').textContent = $('appVersion').textContent;   // mirror the foo
 applyI18n();                 // …then localize the static UI (incl. those clones) before first paint
 renderLiveCoord(sampleAt(0));
 paintHud();
+
+const chipsEl = document.querySelector('.chips');
+if(chipsEl){
+  chipsEl.addEventListener('scroll', updateChipFade, {passive:true});
+  window.addEventListener('resize', updateChipFade);
+  updateChipFade();
+}
 map.whenReady(refreshHint);   // show the empty-state hint once the map is ready (survives a cold start)
 
 if(isNative && FakeGps){
