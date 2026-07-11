@@ -378,6 +378,35 @@
     box-shadow:0 6px 20px rgba(0,0,0,.4); white-space:nowrap; transition:opacity .3s; max-width:calc(100% - 24px);
   }
 
+  /* ---------- error toast ----------
+     The general error channel (flashError). The neutral hint pill is easy to miss —
+     an error must not be. Solid red, warning icon, top-centre in the same band as the
+     hint, above every modal (like the hint, but tappable so it can be dismissed).
+     Sits at the top and never reaches the bottom deck, so it can't cover the controls. */
+  .toast{
+    position:absolute; z-index:1310; left:50%; top:calc(env(safe-area-inset-top) + 96px);
+    transform:translateX(-50%);          /* the resting state the keyframes land back on */
+    display:none; align-items:center; gap:9px;
+    background:var(--stop); color:#fff; border:1px solid rgba(255,255,255,.22);
+    font:600 13px/1.35 var(--sans); padding:12px 16px; border-radius:12px; cursor:pointer;
+    box-shadow:0 10px 28px rgba(0,0,0,.5), 0 0 0 1px rgba(242,85,90,.35);
+    max-width:calc(100% - 24px); text-align:left;
+  }
+  .toast.show{display:flex; animation:toast-in .28s ease-out, toast-shake .4s ease-in-out .28s}
+  .toast svg{width:19px;height:19px;flex:none;fill:#fff}
+  @keyframes toast-in{from{opacity:0; transform:translate(-50%,-14px)} to{opacity:1; transform:translate(-50%,0)}}
+  /* 3 small horizontal oscillations — motion is what actually catches the eye */
+  @keyframes toast-shake{
+    0%,100%{transform:translate(-50%,0)}
+    20%{transform:translate(calc(-50% - 6px),0)}
+    40%{transform:translate(calc(-50% + 6px),0)}
+    60%{transform:translate(calc(-50% - 4px),0)}
+    80%{transform:translate(calc(-50% + 4px),0)}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .toast.show{animation:none}          /* no slide, no shake — it just appears */
+  }
+
   /* place / address search over the map */
   .searchbar{
     position:absolute; z-index:580; top:calc(env(safe-area-inset-top) + 54px); left:50%; transform:translateX(-50%);
@@ -489,6 +518,12 @@
 
   <div class="hint" id="hint">Tap the map to drop point A, then B, then C…</div>
 
+  <!-- general error channel (flashError) — tap to dismiss, auto-hides after 4s -->
+  <div class="toast" id="errorToast" role="alert">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 1 21h22L12 2zm0 5 7.5 12.9h-15L12 7zm-1 4v4h2v-4h-2zm0 6v2h2v-2h-2z"/></svg>
+    <span id="errorToastMsg"></span>
+  </div>
+
   <div id="deck">
     <button id="deckGrab" class="deck-grab" aria-label="Collapse panel" aria-expanded="true"><span class="deck-handle"></span></button>
 
@@ -596,7 +631,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.1.6</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.1.5</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -1968,6 +2003,27 @@ $('wpmRemove').onclick=()=>{ const i=wpMenuIdx; closeWpMenu(); if(i>=0) removeWa
 /* ---------- hint ---------- */
 let hintTimer;
 function flashHint(msg){ const h=$('hint'); h.textContent=msg; h.style.opacity='1'; clearTimeout(hintTimer); hintTimer=setTimeout(refreshHint,2200); }
+
+/* ---------- error toast ----------
+   The loud counterpart to flashHint, and the general error channel for the whole app:
+   pass any already-translated string (like flashHint, callers pass t('key')). Errors get
+   red + a warning icon + motion because the neutral hint pill was too easy to miss.
+   Auto-dismisses after 4s, or immediately when tapped. */
+const ERROR_TOAST_MS = 4000;
+let errorTimer;
+function hideError(){ clearTimeout(errorTimer); $('errorToast').classList.remove('show'); }
+function flashError(msg){
+  const el = $('errorToast');
+  $('errorToastMsg').textContent = msg;
+  clearTimeout(errorTimer);
+  // Restart the entrance animation on a repeat error — re-adding the class alone would
+  // not replay it while the node is already showing.
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  errorTimer = setTimeout(hideError, ERROR_TOAST_MS);
+}
+$('errorToast').onclick = hideError;
 // the empty-state hint floats above the map (high z-index); any full-screen sheet must win.
 function anyOverlayOpen(){ return !!document.querySelector('#help.show,#routes.show,#setup.show,#devhelp.show,#mockhelp.show'); }
 function showHint(){ if(anyOverlayOpen()) return; const h=$('hint'); h.textContent=t('hint.tapMap'); h.style.opacity='1'; }
@@ -2246,7 +2302,7 @@ function importWaypoints(arr){
 function saveCurrentRoute(){
   if(S.waypoints.length<1){ flashHint(t('routes.needPoints')); return; }
   const a=loadRoutes();
-  if(a.length>=ROUTES_CAP){ flashHint(t('routes.full')); return; }
+  if(a.length>=ROUTES_CAP){ flashError(t('routes.full')); return; }
   const typed=(prompt(t('routes.namePrompt'),'')||'').trim(); if(!typed) return;
   a.push({ id:rid(), name:uniqueName(typed, a.map(r=>r.name)),
     waypoints:cleanWaypoints(S.waypoints), speed:S.speed, rateMs:S.rateMs, loop:S.loop });
@@ -2307,12 +2363,12 @@ async function drainOpenedRouteFile(){
   if(!isNative || !FakeGps || !FakeGps.consumePendingImport) return;
   let res;
   try{ res = await FakeGps.consumePendingImport(); }
-  catch(e){ console.warn('pending import failed', e); flashHint(t('routes.importBad')); return; }
+  catch(e){ console.warn('pending import failed', e); flashError(t('routes.importBad')); return; }
   const txt = res && res.data;
   const err = res && res.error;
   // A file WAS opened but the native side couldn't read it (unreadable / empty / oversized).
   // Say so — staying silent here made a failed open look like a normal launch.
-  if(!txt){ if(err) flashHint(t('routes.importBad')); return; }   // no data, no error = normal launch
+  if(!txt){ if(err) flashError(t('routes.importBad')); return; }   // no data, no error = normal launch
   const before = loadRoutes().length;
   importRoutesFromText(String(txt));              // reports the outcome in the hint itself
   if(loadRoutes().length > before) openRoutes();  // land on the list holding the new route
@@ -2322,23 +2378,23 @@ async function drainOpenedRouteFile(){
    The old code half-imported such files and still reported success ("Imported 0, skipped
    1"), which read as though it had worked. Shared by the "Open with" and file-picker paths. */
 function importRoutesFromText(txt){
-  let parsed; try{ parsed=JSON.parse(txt); }catch(e){ flashHint(t('routes.importBad')); return; }
+  let parsed; try{ parsed=JSON.parse(txt); }catch(e){ flashError(t('routes.importBad')); return; }
   let incoming;
   if(parsed && Array.isArray(parsed.routes)) incoming=parsed.routes;          // unified wrapper
   else if(Array.isArray(parsed)) incoming=parsed;                             // bare list
   else if(parsed && Array.isArray(parsed.waypoints)) incoming=[parsed];       // single route object
-  else { flashHint(t('routes.importBad')); return; }
-  if(!incoming.length){ flashHint(t('routes.importBad')); return; }            // nothing to import
+  else { flashError(t('routes.importBad')); return; }
+  if(!incoming.length){ flashError(t('routes.importBad')); return; }            // nothing to import
   // Validate everything BEFORE touching storage: one bad point rejects the file.
   const staged=[];
   for(const raw of incoming){
     const wps = raw ? importWaypoints(raw.waypoints) : null;
-    if(!wps){ flashHint(t('routes.importBad')); return; }
+    if(!wps){ flashError(t('routes.importBad')); return; }
     staged.push({ raw:raw, waypoints:wps });
   }
   const a=loadRoutes();
   // A valid file that simply doesn't fit keeps its own message — the file is fine, the shelf is full.
-  if(a.length + staged.length > ROUTES_CAP){ flashHint(t('routes.full')); return; }
+  if(a.length + staged.length > ROUTES_CAP){ flashError(t('routes.full')); return; }
   for(const s of staged){
     a.push({ id:rid(), name:uniqueName((String(s.raw.name||'Route').trim())||'Route', a.map(r=>r.name)),
       waypoints:s.waypoints, speed:nz(s.raw.speed,40), rateMs:nz(s.raw.rateMs,1000), loop:s.raw.loop||'off' });
@@ -2392,7 +2448,7 @@ $('rtFile').onchange = e => {
   const f=e.target.files && e.target.files[0]; if(!f){ return; }
   const rd=new FileReader();
   rd.onload = () => { importRoutesFromText(String(rd.result)); $('rtFile').value=''; };
-  rd.onerror = () => { flashHint(t('routes.importBad')); $('rtFile').value=''; };
+  rd.onerror = () => { flashError(t('routes.importBad')); $('rtFile').value=''; };
   rd.readAsText(f);
 };
 
