@@ -5,6 +5,9 @@
     <string name="package_name">com.routespoofer.app</string>
     <string name="custom_url_scheme">com.routespoofer.app</string>
 
+    <!-- Label of the "Open with" / share-sheet entry for a .json route file -->
+    <string name="import_route">Import route</string>
+
     <!-- Foreground-service notification (follows the system language) -->
     <string name="notif_driving">Mock GPS active — Driving</string>
     <string name="notif_paused">Mock GPS active — Paused</string>

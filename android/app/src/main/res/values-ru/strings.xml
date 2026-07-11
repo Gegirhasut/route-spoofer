@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Label of the "Open with" / share-sheet entry for a .json route file -->
+    <string name="import_route">Импорт маршрута</string>
+
     <!-- Foreground-service notification -->
     <string name="notif_driving">Фиктивный GPS активен — движение</string>
     <string name="notif_paused">Фиктивный GPS активен — пауза</string>

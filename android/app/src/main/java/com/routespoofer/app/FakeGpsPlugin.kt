@@ -188,6 +188,20 @@ class FakeGpsPlugin : Plugin() {
         call.resolve()
     }
 
+    // ----------------------------------------------------------------- route file import
+
+    /**
+     * Hand over the route file the app was opened with ("Open with" / share sheet), or
+     * `{ data: null }` when there is none. Read-once: a second call returns nothing, so
+     * the same file can't be imported twice on the next resume.
+     */
+    @PluginMethod
+    fun consumePendingImport(call: PluginCall) {
+        val res = JSObject()
+        res.put("data", RouteImport.consume())
+        call.resolve(res)
+    }
+
     // ----------------------------------------------------------------- readiness
 
     @PluginMethod

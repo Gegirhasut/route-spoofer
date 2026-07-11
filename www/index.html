@@ -48,11 +48,17 @@
     padding:7px 12px 7px 11px; border-radius:999px; border:1px solid var(--line-2);
     background:var(--panel); color:var(--muted); white-space:nowrap; flex:none;
   }
-  .state-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
-  body[data-state="playing"] .state-pill{color:var(--signal-ink); background:var(--signal); border-color:transparent}
-  body[data-state="playing"] .state-pill .dot{background:var(--signal-ink); animation:blink .9s steps(2,end) infinite}
-  body[data-state="paused"] .state-pill{color:var(--signal); border-color:var(--signal)}
-  body[data-state="paused"] .state-pill .dot{background:var(--signal)}
+  .state-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--muted); transition:background .15s}
+  /* Driving = a green light blinking next to the status word. Waiting/arrived keep a
+     steady lamp so the blink means "moving right now" and nothing else. */
+  body[data-phase="driving"] .state-pill{color:var(--ok); border-color:rgba(61,220,132,.5)}
+  body[data-phase="driving"] .state-pill .dot{background:var(--ok); box-shadow:0 0 7px var(--ok); animation:blink .9s steps(2,end) infinite}
+  body[data-phase="arrived"] .state-pill{color:var(--ok); border-color:rgba(61,220,132,.5)}
+  body[data-phase="arrived"] .state-pill .dot{background:var(--ok)}
+  body[data-phase="waiting_go"] .state-pill,
+  body[data-phase="waiting_timed"] .state-pill{color:var(--signal); border-color:var(--signal)}
+  body[data-phase="waiting_go"] .state-pill .dot,
+  body[data-phase="waiting_timed"] .state-pill .dot{background:var(--signal)}
   @keyframes blink{50%{opacity:.25}}
 
   .chips{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; flex:1; --fade:20px}
@@ -105,6 +111,13 @@
   }
   body[data-gps="on"] .gps-btn::after{animation-delay:.8s}
   @keyframes ping{0%{opacity:.7;transform:scale(1)}100%{opacity:0;transform:scale(1.7)}}
+  /* Pressing GO while GPS is off points here — the button the user has to tap first. */
+  .gps-btn.nudge{animation:nudge 1.5s ease-out}
+  @keyframes nudge{
+    0%,100%{box-shadow:0 0 0 0 rgba(245,166,35,0)}
+    15%,45%,75%{box-shadow:0 0 0 6px rgba(245,166,35,.45)}
+    30%,60%,90%{box-shadow:0 0 0 0 rgba(245,166,35,0)}
+  }
 
   /* GO / Pause — drives the cursor; only meaningful while GPS is on */
   .go-btn{
@@ -114,7 +127,9 @@
   }
   .go-btn:active{transform:scale(.94)}
   .go-btn svg{width:22px;height:22px;fill:currentColor}
-  .go-btn:disabled{opacity:.4; cursor:default}
+  /* GO stays tappable while it can't run (it is never `disabled`) — a tap on the dimmed
+     button explains what's missing instead of doing nothing. */
+  .go-btn[aria-disabled="true"]{opacity:.4}
   body[data-phase="driving"] .go-btn{background:var(--ok); color:#06281a; border-color:transparent}
 
   .live-read{flex:1; min-width:0}
@@ -197,7 +212,7 @@
   }
   details.log summary::-webkit-details-marker{display:none}
   details.log summary .tick{width:6px;height:6px;border-radius:50%;background:var(--line-2)}
-  body[data-state="playing"] details.log summary .tick{background:var(--ok); box-shadow:0 0 0 0 var(--ok); animation:beat 1s ease-out infinite}
+  body[data-phase="driving"] details.log summary .tick{background:var(--ok); box-shadow:0 0 0 0 var(--ok); animation:beat 1s ease-out infinite}
   @keyframes beat{0%{box-shadow:0 0 0 0 rgba(61,220,132,.5)}100%{box-shadow:0 0 0 7px rgba(61,220,132,0)}}
   .logwrap{margin-top:8px; max-height:108px; overflow:auto; border-radius:8px; background:var(--ink); border:1px solid var(--line)}
   .logline{font:500 11px/1.5 var(--mono); color:var(--muted); padding:2px 9px; white-space:nowrap; border-bottom:1px solid rgba(255,255,255,.03)}
@@ -346,7 +361,7 @@
   /* moving emitter */
   .emitter{position:relative; width:18px;height:18px}
   .emitter i{position:absolute; inset:0; border-radius:50%; background:var(--signal); border:2px solid #fff; box-shadow:0 0 10px var(--signal)}
-  body[data-state="playing"] .emitter::after{
+  body[data-phase="driving"] .emitter::after{
     content:"";position:absolute; inset:-6px; border-radius:50%; border:2px solid var(--signal); animation:ping 1.6s ease-out infinite;
   }
   .bearing{position:absolute; left:50%; top:50%; width:0;height:0;
@@ -453,7 +468,7 @@
   }
 </style>
 </head>
-<body data-state="idle">
+<body>
 
   <div id="map"></div>
 
@@ -481,7 +496,7 @@
       <button class="gps-btn" id="gps" data-i18n-title="gps.off" title="GPS off" aria-pressed="false">
         <svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 100 8 4 4 0 000-8zm9 3h-2.06A7 7 0 0013 5.06V3h-2v2.06A7 7 0 005.06 11H3v2h2.06A7 7 0 0011 18.94V21h2v-2.06A7 7 0 0018.94 13H21v-2z"/></svg>
       </button>
-      <button class="go-btn" id="go" data-i18n-title="go.go" title="GO" disabled>
+      <button class="go-btn" id="go" data-i18n-title="go.go" title="GO" aria-disabled="true">
         <svg id="goIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       </button>
       <div class="live-read">
@@ -581,7 +596,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.1.4</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.1.5</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -804,7 +819,9 @@
           <button id="rtImport" class="rt-mini" data-i18n="routes.import">Import</button>
           <button id="rtDeleteAll" class="rt-mini danger" data-i18n="routes.deleteAll">Delete all</button>
         </div>
-        <input id="rtFile" type="file" accept="application/json,.json" hidden />
+        <!-- File managers type an exported .json as octet-stream or plain text as often
+             as application/json; a strict accept= greys those out in the picker. -->
+        <input id="rtFile" type="file" accept=".json,application/json,text/json,text/plain,application/octet-stream" hidden />
       </div>
     </div>
   </div>
@@ -898,7 +915,7 @@ const I18N = {
     'dev.step4':'Come back here and tap Re-check',
     'dev.note':'The exact path varies slightly by phone brand.',
     'dev.openAbout':'Open About phone','dev.recheck':'Re-check','dev.close':'Close',
-    'hint.dropFirst':'Drop at least one point first.','hint.routeComplete':'Route complete.',
+    'hint.dropFirst':'Drop at least one point first.','hint.needTwo':'Add a second point — GO drives between points.','hint.gpsFirst':'Turn GPS on first — tap the GPS button.','hint.routeComplete':'Route complete.',
     'hint.finishSetup':'Finish setup to start.','hint.couldNotStart':'Could not start mock service.',
     'hint.locating':'Locating…','hint.centered':'Centered on your location.',
     'hint.locationDenied':'Location is off — allow it in Settings to use this.','hint.geoUnavailable':'Geolocation unavailable.',
@@ -950,7 +967,7 @@ const I18N = {
     'dev.step4':'Вернитесь сюда и нажмите «Проверить снова»',
     'dev.note':'Точный путь немного отличается у разных производителей.',
     'dev.openAbout':'Открыть «О телефоне»','dev.recheck':'Проверить снова','dev.close':'Закрыть',
-    'hint.dropFirst':'Сначала поставьте хотя бы одну точку.','hint.routeComplete':'Маршрут завершён.',
+    'hint.dropFirst':'Сначала поставьте хотя бы одну точку.','hint.needTwo':'Добавьте вторую точку — GO ведёт между точками.','hint.gpsFirst':'Сначала включите GPS — нажмите кнопку GPS.','hint.routeComplete':'Маршрут завершён.',
     'hint.finishSetup':'Завершите настройку для запуска.','hint.couldNotStart':'Не удалось запустить службу фиктивного GPS.',
     'hint.locating':'Определение…','hint.centered':'Карта по вашему местоположению.',
     'hint.locationDenied':'Геолокация выключена — включите её в настройках.','hint.geoUnavailable':'Геолокация недоступна.',
@@ -1002,7 +1019,7 @@ const I18N = {
     'dev.step4':'Komm zurück und tippe auf „Erneut prüfen“',
     'dev.note':'Der genaue Pfad unterscheidet sich je nach Hersteller leicht.',
     'dev.openAbout':'Über das Telefon öffnen','dev.recheck':'Erneut prüfen','dev.close':'Schließen',
-    'hint.dropFirst':'Setze zuerst mindestens einen Punkt.','hint.routeComplete':'Route abgeschlossen.',
+    'hint.dropFirst':'Setze zuerst mindestens einen Punkt.','hint.needTwo':'Setze einen zweiten Punkt — GO fährt zwischen Punkten.','hint.gpsFirst':'Schalte zuerst GPS ein — tippe auf die GPS-Taste.','hint.routeComplete':'Route abgeschlossen.',
     'hint.finishSetup':'Schließe die Einrichtung ab, um zu starten.','hint.couldNotStart':'Mock-Dienst konnte nicht gestartet werden.',
     'hint.locating':'Suche…','hint.centered':'Auf deinen Standort zentriert.',
     'hint.locationDenied':'Standort ist aus — erlaube ihn in den Einstellungen.','hint.geoUnavailable':'Standortdienst nicht verfügbar.',
@@ -1054,7 +1071,7 @@ const I18N = {
     'dev.step4':'Vuelve aquí y toca «Volver a comprobar»',
     'dev.note':'La ruta exacta varía un poco según la marca del teléfono.',
     'dev.openAbout':'Abrir Información del teléfono','dev.recheck':'Volver a comprobar','dev.close':'Cerrar',
-    'hint.dropFirst':'Pon al menos un punto primero.','hint.routeComplete':'Ruta completada.',
+    'hint.dropFirst':'Pon al menos un punto primero.','hint.needTwo':'Añade un segundo punto: IR conduce entre puntos.','hint.gpsFirst':'Enciende el GPS primero: toca el botón de GPS.','hint.routeComplete':'Ruta completada.',
     'hint.finishSetup':'Completa la configuración para empezar.','hint.couldNotStart':'No se pudo iniciar el servicio simulado.',
     'hint.locating':'Localizando…','hint.centered':'Centrado en tu ubicación.',
     'hint.locationDenied':'La ubicación está desactivada — actívala en Ajustes.','hint.geoUnavailable':'Geolocalización no disponible.',
@@ -1106,7 +1123,7 @@ const I18N = {
     'dev.step4':'Volte aqui e toque em «Verificar de novo»',
     'dev.note':'O caminho exato varia um pouco conforme a marca do aparelho.',
     'dev.openAbout':'Abrir Sobre o telefone','dev.recheck':'Verificar de novo','dev.close':'Fechar',
-    'hint.dropFirst':'Marque ao menos um ponto primeiro.','hint.routeComplete':'Rota concluída.',
+    'hint.dropFirst':'Marque ao menos um ponto primeiro.','hint.needTwo':'Adicione um segundo ponto — IR dirige entre pontos.','hint.gpsFirst':'Ligue o GPS primeiro — toque no botão de GPS.','hint.routeComplete':'Rota concluída.',
     'hint.finishSetup':'Conclua a configuração para iniciar.','hint.couldNotStart':'Não foi possível iniciar o serviço falso.',
     'hint.locating':'Localizando…','hint.centered':'Centralizado na sua localização.',
     'hint.locationDenied':'A localização está desativada — ative-a nas Configurações.','hint.geoUnavailable':'Geolocalização indisponível.',
@@ -1158,7 +1175,7 @@ const I18N = {
     'dev.step4':'Revenez ici et touchez « Revérifier »',
     'dev.note':'Le chemin exact varie légèrement selon la marque.',
     'dev.openAbout':'Ouvrir À propos du téléphone','dev.recheck':'Revérifier','dev.close':'Fermer',
-    'hint.dropFirst':'Placez d’abord au moins un point.','hint.routeComplete':'Trajet terminé.',
+    'hint.dropFirst':'Placez d’abord au moins un point.','hint.needTwo':'Ajoutez un deuxième point — GO roule entre les points.','hint.gpsFirst':'Activez d’abord le GPS — touchez le bouton GPS.','hint.routeComplete':'Trajet terminé.',
     'hint.finishSetup':'Terminez la configuration pour démarrer.','hint.couldNotStart':'Impossible de démarrer le service fictif.',
     'hint.locating':'Localisation…','hint.centered':'Centré sur votre position.',
     'hint.locationDenied':'La localisation est désactivée — activez-la dans les Paramètres.','hint.geoUnavailable':'Géolocalisation indisponible.',
@@ -1210,7 +1227,7 @@ const I18N = {
     'dev.step4':'返回此处并点击“重新检查”',
     'dev.note':'具体路径因手机品牌略有不同。',
     'dev.openAbout':'打开“关于手机”','dev.recheck':'重新检查','dev.close':'关闭',
-    'hint.dropFirst':'请先放置至少一个点。','hint.routeComplete':'路线完成。',
+    'hint.dropFirst':'请先放置至少一个点。','hint.needTwo':'再加一个点——GO 在点之间行驶。','hint.gpsFirst':'请先打开 GPS——点击 GPS 按钮。','hint.routeComplete':'路线完成。',
     'hint.finishSetup':'完成设置后即可开始。','hint.couldNotStart':'无法启动模拟服务。',
     'hint.locating':'定位中…','hint.centered':'已居中到你的位置。',
     'hint.locationDenied':'位置已关闭——请在设置中允许。','hint.geoUnavailable':'无法使用定位。',
@@ -1262,7 +1279,7 @@ const I18N = {
     'dev.step4':'यहाँ लौटें और «फिर से जाँचें» पर टैप करें',
     'dev.note':'सटीक रास्ता फ़ोन ब्रांड के अनुसार थोड़ा अलग होता है।',
     'dev.openAbout':'फ़ोन के बारे में खोलें','dev.recheck':'फिर से जाँचें','dev.close':'बंद करें',
-    'hint.dropFirst':'पहले कम से कम एक बिंदु रखें।','hint.routeComplete':'रूट पूरा हुआ।',
+    'hint.dropFirst':'पहले कम से कम एक बिंदु रखें।','hint.needTwo':'दूसरा बिंदु जोड़ें — GO बिंदुओं के बीच चलाता है।','hint.gpsFirst':'पहले GPS चालू करें — GPS बटन दबाएँ।','hint.routeComplete':'रूट पूरा हुआ।',
     'hint.finishSetup':'शुरू करने के लिए सेटअप पूरा करें।','hint.couldNotStart':'मॉक सेवा शुरू नहीं हो सकी।',
     'hint.locating':'ढूँढ रहा है…','hint.centered':'आपके स्थान पर केंद्रित।',
     'hint.locationDenied':'स्थान बंद है — इसे सेटिंग्स में चालू करें।','hint.geoUnavailable':'जियोलोकेशन उपलब्ध नहीं।',
@@ -1570,7 +1587,14 @@ function removeWaypoint(i){
   persist();
 }
 
-map.on('click', e=>{ if(S.locked) return; addWaypoint(e.latlng); });
+// A map tap while the control deck is up lowers the deck instead of dropping a point,
+// so reaching for the map to get the panel out of the way can't litter the route with
+// accidental waypoints. The next tap (deck down) adds the point as usual.
+map.on('click', e=>{
+  if(S.locked) return;
+  if(!document.body.classList.contains('deck-collapsed')){ setDeckCollapsed(true); refreshHint(); return; }
+  addWaypoint(e.latlng);
+});
 
 /* ---------- unified render: a normalized drive snapshot -> pill + marker + HUD ---------- */
 function applyDrive(st){
@@ -1718,18 +1742,32 @@ async function gpsTurnOn(){
     try{ await FakeGps.setRoute(routePayload()); await FakeGps.startGps(); }
     catch(e){ console.warn('startGps failed',e); flashHint(t('hint.couldNotStart')); S.gpsOn=false; document.body.dataset.gps='off'; return; }
   } else { PV.start(); applyDrive(PV.snapshot()); }
-  $('go').disabled = S.waypoints.length<2;
   syncTools();
 }
 async function gpsTurnOff(){
-  S.gpsOn=false; document.body.dataset.gps='off'; $('go').disabled=true;
+  S.gpsOn=false; document.body.dataset.gps='off';
   if(isNative){ try{ await FakeGps.stopGps(); }catch(e){ console.warn(e);} }
   else { PV.stop(); applyDrive(PV.snapshot()); }
   syncTools();
 }
 function toggleGps(){ S.gpsOn ? gpsTurnOff() : gpsTurnOn(); }
+/* GO can't run until GPS is broadcasting and the route has 2+ points. The button is
+   dimmed but never `disabled`, so a tap on it says WHICH of the two is missing —
+   and when it's the GPS switch, flags the icon to tap first. */
+function setGoReady(){
+  const b=$('go');
+  b.setAttribute('aria-disabled', (S.gpsOn && S.waypoints.length>=2) ? 'false' : 'true');
+}
+function nudgeGps(){
+  const b=$('gps'); b.classList.remove('nudge');
+  void b.offsetWidth;                 // restart the animation on a repeat tap
+  b.classList.add('nudge');
+  setTimeout(()=>b.classList.remove('nudge'), 1600);
+}
 async function pressGo(){
-  if(!S.gpsOn || S.waypoints.length<2) return;
+  if(!S.waypoints.length){ flashHint(t('hint.dropFirst')); return; }
+  if(S.waypoints.length<2){ flashHint(t('hint.needTwo')); return; }
+  if(!S.gpsOn){ flashHint(t('hint.gpsFirst')); nudgeGps(); return; }
   if(isDriving()){ if(isNative){ try{ await FakeGps.pause(); }catch(e){ console.warn(e);} } else PV.pauseDrive(); }
   else { if(isNative){ try{ await FakeGps.go(); }catch(e){ console.warn(e);} } else PV.go(); }
   if(!isNative) applyDrive(PV.snapshot());
@@ -1742,7 +1780,7 @@ function pressStop(){
 function hardReset(){      // the route was emptied
   if(isNative){ try{ FakeGps.stopGps(); }catch(e){ console.warn(e);} } else PV.stop();
   S.gpsOn=false; S.phase='standing'; S.traveled=0;
-  document.body.dataset.gps='off'; document.body.dataset.phase='standing'; $('go').disabled=true;
+  document.body.dataset.gps='off'; document.body.dataset.phase='standing';
   if(S.emitMarker){ S.emitMarker.remove(); S.emitMarker=null; }
   document.getElementById('stateLabel').textContent=statusText();
   document.getElementById('railFill').style.width='0%';
@@ -1754,8 +1792,7 @@ function hardReset(){      // the route was emptied
 function applyNativeFix(f){
   if(!f) return;
   S.gpsOn = !!f.gpsOn; document.body.dataset.gps = f.gpsOn ? 'on' : 'off';
-  $('go').disabled = !f.gpsOn || S.waypoints.length<2;
-  applyDrive({
+  applyDrive({                                   // -> syncTools() -> setGoReady()
     lat:f.lat, lng:f.lng, brg:f.bearing, seg:f.segIndex||0,
     phase:f.phase||'standing', speedKmh:f.speedKmh,
     traveled:(f.traveled!=null)?f.traveled:((f.progress||0)*S.total),
@@ -1883,6 +1920,7 @@ function syncTools(){
   // playback state only, never on GPS (#4527): a run stays stoppable even if GPS
   // is switched off mid-playback.
   $('stop').disabled = !isPlaybackActive();
+  setGoReady();
 }
 // open / closed padlock glyphs — swapped to reflect the lock state
 const LOCK_OPEN_PATH='M12 17a2 2 0 002-2 2 2 0 00-2-2 2 2 0 00-2 2 2 2 0 002 2zm6-9h-9V6a3.1 3.1 0 016.2 0h1.8A5 5 0 007 6v2H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V10a2 2 0 00-2-2z';
@@ -2086,6 +2124,7 @@ async function revalidateOnResume(){
   const now=Date.now();
   if(now-_lastResumeCheck < 800) return;   // debounce duplicate visibility/focus signals
   _lastResumeCheck=now;
+  drainOpenedRouteFile();   // an "Open with" on a route file resumes us — take it first
   const st=await refreshReady();           // fast: reads permission/settings flags, no GPS fix
   if(!st) return;
   const permOk = st.locationPermission && st.notificationPermission;
@@ -2205,7 +2244,7 @@ function loadRouteIntoScene(rt){      // restore full scene, reset to idle, rece
   document.querySelectorAll('#spdPresets button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.speed));
   $('rate').value=S.rateMs/1000; $('rateVal').textContent=(S.rateMs/1000).toFixed(1)+' s'; $('liveRate').textContent=(S.rateMs/1000).toFixed(1)+'s';
   document.querySelectorAll('#loopSeg button').forEach(b=>b.classList.toggle('on',b.dataset.loop===S.loop));
-  document.body.dataset.gps='off'; document.body.dataset.phase='standing'; $('go').disabled = S.waypoints.length<2;
+  document.body.dataset.gps='off'; document.body.dataset.phase='standing';
   if(S.emitMarker){ S.emitMarker.remove(); S.emitMarker=null; }
   document.getElementById('stateLabel').textContent=statusText();
   document.getElementById('railFill').style.width='0%';
@@ -2243,6 +2282,19 @@ async function exportRoutes(routes){
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
     flashHint(t('routes.exported'));
   }catch(e){ console.warn('export failed', e); flashHint(t('routes.exportErr')); }
+}
+/* Route file the app was opened with ("Open with" / share sheet on an exported .json).
+   The native side parked it (RouteImport); drain it at boot and on every resume, since
+   a file opened while the app is already running arrives via onNewIntent. */
+async function drainOpenedRouteFile(){
+  if(!isNative || !FakeGps || !FakeGps.consumePendingImport) return;
+  let txt;
+  try{ const r = await FakeGps.consumePendingImport(); txt = r && r.data; }
+  catch(e){ console.warn('pending import failed', e); return; }
+  if(!txt) return;
+  const before = loadRoutes().length;
+  importRoutesFromText(String(txt));            // reports imported/skipped in the hint
+  if(loadRoutes().length > before) openRoutes();  // land on the list holding the new route
 }
 function importRoutesFromText(txt){
   let parsed; try{ parsed=JSON.parse(txt); }catch(e){ flashHint(t('routes.importBad')); return; }
@@ -2320,12 +2372,13 @@ mapViewRestored = restoreMapView();   // a saved view wins over the route's fit-
 restore();
 document.body.dataset.gps='off';
 document.body.dataset.phase='standing';
-$('go').disabled=true;
+setGoReady();
 renderMockSteps();           // clone shared step-2 instructions into both render targets…
 $('setupVersion').textContent = $('appVersion').textContent;   // mirror the footer build version onto the permissions screen (single source of truth)
 applyI18n();                 // …then localize the static UI (incl. those clones) before first paint
 renderLiveCoord(sampleAt(0));
 paintHud();
+drainOpenedRouteFile();      // cold start from "Open with" on an exported route file
 
 const chipsEl = document.querySelector('.chips');
 if(chipsEl){

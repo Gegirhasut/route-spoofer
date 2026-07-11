@@ -23,6 +23,44 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Open an exported route with Route Spoofer: "Open with" from a file
+                 manager / Downloads / Drive, and the system share sheet. Without these
+                 the app exports a .json it cannot itself be asked to open. -->
+            <intent-filter android:label="@string/import_route">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/json" />
+            </intent-filter>
+
+            <!-- Same file coming from a share sheet ("Share → Route Spoofer"). -->
+            <intent-filter android:label="@string/import_route">
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="text/json" />
+            </intent-filter>
+
+            <!-- Pre-Android-10 file managers hand a .json out as octet-stream / plain
+                 text, so those two are matched by extension as well. pathPattern only
+                 bites on URIs with a real path, which is what those senders provide. -->
+            <intent-filter android:label="@string/import_route">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="text/plain" />
+                <data android:pathPattern=".*\\.json" />
+                <data android:pathPattern=".*\\..*\\.json" />
+                <data android:pathPattern=".*\\..*\\..*\\.json" />
+            </intent-filter>
+
         </activity>
 
         <provider

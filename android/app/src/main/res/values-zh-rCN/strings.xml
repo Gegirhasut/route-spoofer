@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Label of the "Open with" / share-sheet entry for a .json route file -->
+    <string name="import_route">导入路线</string>
+
     <!-- Foreground-service notification -->
     <string name="notif_driving">模拟 GPS 已启用 — 行驶中</string>
     <string name="notif_paused">模拟 GPS 已启用 — 已暂停</string>
