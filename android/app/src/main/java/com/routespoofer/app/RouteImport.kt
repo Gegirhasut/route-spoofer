@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import java.io.IOException
+import java.io.InputStream
 
 /**
  * Holds the route file the app was opened with, until the web layer picks it up.
@@ -61,18 +62,7 @@ object RouteImport {
         uri: Uri,
     ): String? =
         try {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val buf = ByteArray(MAX_BYTES)
-                var read = 0
-                while (read < MAX_BYTES) {
-                    val n = stream.read(buf, read, MAX_BYTES - read)
-                    if (n < 0) break
-                    read += n
-                }
-                // Filled the cap: the file is larger than any export. Refuse it rather than
-                // hand the parser a truncated, half-valid document.
-                if (read >= MAX_BYTES) null else String(buf, 0, read, Charsets.UTF_8)
-            }
+            context.contentResolver.openInputStream(uri)?.use(::readCapped)
         } catch (e: IOException) {
             Log.w(TAG, "could not read route file $uri", e)
             null
@@ -85,4 +75,20 @@ object RouteImport {
             Log.w(TAG, "unusable route file uri $uri", e)
             null
         }
+
+    /**
+     * Read at most [MAX_BYTES] of UTF-8 text from [stream], or null once the cap is filled:
+     * the file is then larger than any route export, and returning what fits would hand the
+     * parser a truncated, half-valid document.
+     */
+    private fun readCapped(stream: InputStream): String? {
+        val buf = ByteArray(MAX_BYTES)
+        var read = 0
+        while (read < MAX_BYTES) {
+            val n = stream.read(buf, read, MAX_BYTES - read)
+            if (n < 0) break
+            read += n
+        }
+        return if (read >= MAX_BYTES) null else String(buf, 0, read, Charsets.UTF_8)
+    }
 }
