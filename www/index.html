@@ -631,7 +631,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.1.5</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.1.6</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -2344,7 +2344,7 @@ async function exportRoutes(routes){
       const { uri } = await Filesystem.getUri({ path:fname, directory:'CACHE' });
       await Share.share({ title:t('routes.title'), url:uri, dialogTitle:t('routes.shareTitle') });
       flashHint(t('routes.exported'));
-    }catch(e){ console.warn('native export failed', e); flashHint(t('routes.exportErr')); }
+    }catch(e){ console.warn('native export failed', e); flashError(t('routes.exportErr')); }
     return;
   }
   // Web fallback: Blob + <a download>
@@ -2354,7 +2354,7 @@ async function exportRoutes(routes){
     a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1000);
     flashHint(t('routes.exported'));
-  }catch(e){ console.warn('export failed', e); flashHint(t('routes.exportErr')); }
+  }catch(e){ console.warn('export failed', e); flashError(t('routes.exportErr')); }
 }
 /* Route file the app was opened with ("Open with" / share sheet on an exported .json).
    The native side parked it (RouteImport); drain it at boot and on every resume, since
