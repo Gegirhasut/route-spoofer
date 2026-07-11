@@ -25,6 +25,14 @@ object RouteImport {
     @Volatile
     private var pending: String? = null
 
+    /**
+     * Set when a route file WAS handed to us but could not be turned into text (unreadable,
+     * empty, oversized). Distinct from "no file at all", which leaves both fields clear —
+     * without it the web layer cannot tell a failed import from a normal launch.
+     */
+    @Volatile
+    private var failed: Boolean = false
+
     /** Read the route file [intent] points at (if any) and park it for the web layer. */
     fun capture(
         context: Context,
@@ -32,7 +40,12 @@ object RouteImport {
     ) {
         val uri = routeUri(intent) ?: return
         val text = readText(context, uri)
-        if (!text.isNullOrBlank()) pending = text
+        if (text.isNullOrBlank()) {
+            failed = true
+        } else {
+            pending = text
+            failed = false
+        }
     }
 
     /** Hand the parked file to the caller, exactly once. */
@@ -40,6 +53,13 @@ object RouteImport {
         val text = pending
         pending = null
         return text
+    }
+
+    /** Whether the last opened file could not be read. Reported exactly once, like [consume]. */
+    fun consumeFailed(): Boolean {
+        val hadFailure = failed
+        failed = false
+        return hadFailure
     }
 
     private fun routeUri(intent: Intent?): Uri? =

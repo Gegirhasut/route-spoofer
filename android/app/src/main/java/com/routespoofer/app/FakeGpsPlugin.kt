@@ -191,14 +191,22 @@ class FakeGpsPlugin : Plugin() {
     // ----------------------------------------------------------------- route file import
 
     /**
-     * Hand over the route file the app was opened with ("Open with" / share sheet), or
-     * `{ data: null }` when there is none. Read-once: a second call returns nothing, so
-     * the same file can't be imported twice on the next resume.
+     * Hand over the route file the app was opened with ("Open with" / share sheet):
+     *  - `{ data: <text> }`  the file was read,
+     *  - `{ error: "unreadable" }`  a file WAS opened but could not be read (unreadable,
+     *    empty, oversized) — the web layer needs this to say so instead of staying silent,
+     *  - `{}`  no file was opened at all (a normal launch).
+     * Read-once, so the same file can't be re-imported on the next resume.
      */
     @PluginMethod
     fun consumePendingImport(call: PluginCall) {
         val res = JSObject()
-        res.put("data", RouteImport.consume())
+        val data = RouteImport.consume()
+        if (data != null) {
+            res.put("data", data)
+        } else if (RouteImport.consumeFailed()) {
+            res.put("error", ERROR_UNREADABLE)
+        }
         call.resolve(res)
     }
 
@@ -473,6 +481,7 @@ class FakeGpsPlugin : Plugin() {
 
     companion object {
         private const val TAG = "FakeGpsPlugin"
+        private const val ERROR_UNREADABLE = "unreadable"
         private const val PROBE_PROVIDER = "route-spoofer-probe"
         private const val DEV_CHANNEL_ID = "route_spoofer_devopts2"
         private const val LEGACY_DEV_CHANNEL_ID = "route_spoofer_devopts"
