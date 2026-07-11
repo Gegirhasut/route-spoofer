@@ -631,7 +631,7 @@
       <button class="helpbtn" id="btnHelp" data-i18n-title="help.title" title="How it works" aria-label="Help">?</button>
     </div>
 
-    <div class="credit">Route Spoofer <span id="appVersion">v1.1.7</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
+    <div class="credit">Route Spoofer <span id="appVersion">v1.1.8</span> · by <b>Maxim Popelnitskiy</b> · <span data-i18n="about.qa">Beta-tested via</span> <a class="qa-credit" id="qaLink" href="https://qaprovider.com/" rel="noopener">QAProvider</a></div>
     </div><!-- /#deckBody -->
   </div>
 
@@ -954,6 +954,7 @@ const I18N = {
     'hint.finishSetup':'Finish setup to start.','hint.couldNotStart':'Could not start mock service.',
     'hint.locating':'Locating…','hint.centered':'Centered on your location.',
     'hint.locationDenied':'Location is off — allow it in Settings to use this.','hint.geoUnavailable':'Geolocation unavailable.',
+    'hint.locationTimeout':'No location fix yet — try again.','hint.centeredMock':'Centered on the location you are broadcasting.',
     'hint.ready':'Ready — tap play.','hint.openSettingsManual':'Open Developer options → Select mock location app → choose Route Spoofer.','hint.devOn':'Developer options on — now pick the mock app.',
     'hint.devStillOff':'Still off — enable Developer options to continue.',
     'wp.startRemove':'Start — tap to remove','wp.tapRemove':'Tap to remove',
@@ -1006,6 +1007,7 @@ const I18N = {
     'hint.finishSetup':'Завершите настройку для запуска.','hint.couldNotStart':'Не удалось запустить службу фиктивного GPS.',
     'hint.locating':'Определение…','hint.centered':'Карта по вашему местоположению.',
     'hint.locationDenied':'Геолокация выключена — включите её в настройках.','hint.geoUnavailable':'Геолокация недоступна.',
+    'hint.locationTimeout':'Не удалось определить местоположение — попробуйте ещё раз.','hint.centeredMock':'Карта по точке, которую вы транслируете.',
     'hint.ready':'Готово — нажмите воспроизведение.','hint.openSettingsManual':'Откройте «Для разработчиков» → «Приложение для фиктивных местоположений» → выберите Route Spoofer.','hint.devOn':'Режим разработчика включён — выберите приложение для фиктивной локации.',
     'hint.devStillOff':'Всё ещё выключено — включите режим разработчика, чтобы продолжить.',
     'wp.startRemove':'Старт — нажмите, чтобы удалить','wp.tapRemove':'Нажмите, чтобы удалить',
@@ -1058,6 +1060,7 @@ const I18N = {
     'hint.finishSetup':'Schließe die Einrichtung ab, um zu starten.','hint.couldNotStart':'Mock-Dienst konnte nicht gestartet werden.',
     'hint.locating':'Suche…','hint.centered':'Auf deinen Standort zentriert.',
     'hint.locationDenied':'Standort ist aus — erlaube ihn in den Einstellungen.','hint.geoUnavailable':'Standortdienst nicht verfügbar.',
+    'hint.locationTimeout':'Noch keine Standortbestimmung — versuche es erneut.','hint.centeredMock':'Auf den Standort zentriert, den du sendest.',
     'hint.ready':'Bereit – tippe auf Wiedergabe.','hint.openSettingsManual':'Öffne Entwickleroptionen → App für simulierte Standorte → wähle Route Spoofer.','hint.devOn':'Entwickleroptionen an – wähle jetzt die Mock-App.',
     'hint.devStillOff':'Immer noch aus – aktiviere die Entwickleroptionen, um fortzufahren.',
     'wp.startRemove':'Start – tippen zum Entfernen','wp.tapRemove':'Tippen zum Entfernen',
@@ -1110,6 +1113,7 @@ const I18N = {
     'hint.finishSetup':'Completa la configuración para empezar.','hint.couldNotStart':'No se pudo iniciar el servicio simulado.',
     'hint.locating':'Localizando…','hint.centered':'Centrado en tu ubicación.',
     'hint.locationDenied':'La ubicación está desactivada — actívala en Ajustes.','hint.geoUnavailable':'Geolocalización no disponible.',
+    'hint.locationTimeout':'Aún no hay ubicación — inténtalo de nuevo.','hint.centeredMock':'Centrado en la ubicación que estás emitiendo.',
     'hint.ready':'Listo: toca reproducir.','hint.openSettingsManual':'Abre Opciones de desarrollador → Seleccionar app de ubicación simulada → elige Route Spoofer.','hint.devOn':'Opciones de desarrollador activadas: elige la app de ubicación simulada.',
     'hint.devStillOff':'Sigue desactivado: activa las opciones de desarrollador para continuar.',
     'wp.startRemove':'Inicio: toca para eliminar','wp.tapRemove':'Toca para eliminar',
@@ -1162,6 +1166,7 @@ const I18N = {
     'hint.finishSetup':'Conclua a configuração para iniciar.','hint.couldNotStart':'Não foi possível iniciar o serviço falso.',
     'hint.locating':'Localizando…','hint.centered':'Centralizado na sua localização.',
     'hint.locationDenied':'A localização está desativada — ative-a nas Configurações.','hint.geoUnavailable':'Geolocalização indisponível.',
+    'hint.locationTimeout':'Ainda sem localização — tente novamente.','hint.centeredMock':'Centralizado na localização que você está transmitindo.',
     'hint.ready':'Pronto — toque em reproduzir.','hint.openSettingsManual':'Abra Opções do desenvolvedor → Selecionar app de localização simulada → escolha Route Spoofer.','hint.devOn':'Opções do desenvolvedor ativadas — escolha o app de localização falsa.',
     'hint.devStillOff':'Ainda desativado — ative as opções do desenvolvedor para continuar.',
     'wp.startRemove':'Início — toque para remover','wp.tapRemove':'Toque para remover',
@@ -1214,6 +1219,7 @@ const I18N = {
     'hint.finishSetup':'Terminez la configuration pour démarrer.','hint.couldNotStart':'Impossible de démarrer le service fictif.',
     'hint.locating':'Localisation…','hint.centered':'Centré sur votre position.',
     'hint.locationDenied':'La localisation est désactivée — activez-la dans les Paramètres.','hint.geoUnavailable':'Géolocalisation indisponible.',
+    'hint.locationTimeout':'Pas encore de position — réessayez.','hint.centeredMock':'Centré sur la position que vous diffusez.',
     'hint.ready':'Prêt — touchez lecture.','hint.openSettingsManual':'Ouvrez Options pour développeurs → Sélectionner l’application de localisation fictive → choisissez Route Spoofer.','hint.devOn':'Options développeur activées — choisissez l’appli de position fictive.',
     'hint.devStillOff':'Toujours désactivé — activez les options développeur pour continuer.',
     'wp.startRemove':'Départ — touchez pour supprimer','wp.tapRemove':'Touchez pour supprimer',
@@ -1266,6 +1272,7 @@ const I18N = {
     'hint.finishSetup':'完成设置后即可开始。','hint.couldNotStart':'无法启动模拟服务。',
     'hint.locating':'定位中…','hint.centered':'已居中到你的位置。',
     'hint.locationDenied':'位置已关闭——请在设置中允许。','hint.geoUnavailable':'无法使用定位。',
+    'hint.locationTimeout':'尚未获取到定位——请重试。','hint.centeredMock':'已居中到你正在广播的位置。',
     'hint.ready':'就绪 — 点击播放。','hint.openSettingsManual':'打开开发者选项 → 选择模拟位置信息应用 → 选择 Route Spoofer。','hint.devOn':'开发者选项已开启 — 现在选择模拟位置应用。',
     'hint.devStillOff':'仍未开启 — 请开启开发者选项以继续。',
     'wp.startRemove':'起点 — 点击删除','wp.tapRemove':'点击删除',
@@ -1318,6 +1325,7 @@ const I18N = {
     'hint.finishSetup':'शुरू करने के लिए सेटअप पूरा करें।','hint.couldNotStart':'मॉक सेवा शुरू नहीं हो सकी।',
     'hint.locating':'ढूँढ रहा है…','hint.centered':'आपके स्थान पर केंद्रित।',
     'hint.locationDenied':'स्थान बंद है — इसे सेटिंग्स में चालू करें।','hint.geoUnavailable':'जियोलोकेशन उपलब्ध नहीं।',
+    'hint.locationTimeout':'अभी स्थान नहीं मिला — फिर से कोशिश करें।','hint.centeredMock':'आप जो स्थान भेज रहे हैं, मानचित्र उस पर केंद्रित है।',
     'hint.ready':'तैयार — प्ले पर टैप करें।','hint.openSettingsManual':'डेवलपर विकल्प → मॉक लोकेशन ऐप चुनें → Route Spoofer चुनें।','hint.devOn':'डेवलपर विकल्प चालू — अब मॉक स्थान ऐप चुनें।',
     'hint.devStillOff':'अब भी बंद — जारी रखने के लिए डेवलपर विकल्प चालू करें।',
     'wp.startRemove':'शुरुआत — हटाने के लिए टैप करें','wp.tapRemove':'हटाने के लिए टैप करें',
@@ -1916,7 +1924,24 @@ $('clear').onclick=()=>{ if(S.gpsOn)return; S.waypoints=[]; refreshMarkers(); re
 $('reverse').onclick=()=>{ if(S.gpsOn||S.waypoints.length<2)return; S.waypoints.reverse(); refreshMarkers(); recompute(); persist(); };
 $('lock').onclick=toggleLock;
 
+/* A geolocation failure is not proof that location services are off (#4563): a plain
+   timeout, an unavailable provider or a Play-services hiccup all reject too. Blaming
+   "location is off" for every rejection sent testers to a Settings screen that was
+   already correct — so read the error out instead. Capacitor's Android codes are
+   OS-PLUG-GLOC-0003 (permission), 0007 (services really off), 0010 (timeout); the web
+   PositionError uses 1 / 2 / 3. */
+function geoErrHint(e){
+  const s=((e&&e.code)!=null?String(e.code):'')+' '+((e&&e.message)||'');
+  if(/GLOC-0007/.test(s)) return t('hint.locationDenied');
+  if(/GLOC-0003/.test(s) || (e&&e.code===1)) return t('hint.locationBlocked');
+  if(/GLOC-0010/.test(s) || (e&&e.code===3)) return t('hint.locationTimeout');
+  return t('hint.geoUnavailable');
+}
+let locating=false;
 $('locate').onclick=async ()=>{
+  // a second tap while the first fix is still pending used to fire a second, concurrent
+  // native request — the two raced and one of them rejected (#4563)
+  if(locating) return;
   // FIX 5 — check permission up front (fast flag read, not a GPS fix) so a
   // missing permission never burns ~10s on a geolocation timeout.
   if(isNative && FakeGps){
@@ -1933,17 +1958,26 @@ $('locate').onclick=async ()=>{
       }
     }
   }
+  // While broadcasting, the device's location IS the fix we are pushing: mock mode makes
+  // the fused provider answer with our own pushes only, so asking it just waits on the
+  // next tick and can time out. Read the cursor off the route instead (#4563).
+  if(S.gpsOn){
+    const f=sampleAt(S.traveled);
+    if(f){ centerOnMap([f.lat,f.lng],15,true); flashHint(t('hint.centeredMock')); return; }
+  }
+  locating=true; $('locate').disabled=true;
   flashHint(t('hint.locating'));
   try{
     if(isNative && Geo){
       const p=await Geo.getCurrentPosition({enableHighAccuracy:true, timeout:8000});
       centerOnMap([p.coords.latitude,p.coords.longitude],15,true); flashHint(t('hint.centered'));
     } else if(navigator.geolocation){
-      navigator.geolocation.getCurrentPosition(
-        p=>{ centerOnMap([p.coords.latitude,p.coords.longitude],15,true); flashHint(t('hint.centered')); },
-        ()=>flashHint(t('hint.locationDenied')), {enableHighAccuracy:true,timeout:8000});
+      await new Promise(res=>navigator.geolocation.getCurrentPosition(
+        p=>{ centerOnMap([p.coords.latitude,p.coords.longitude],15,true); flashHint(t('hint.centered')); res(); },
+        err=>{ flashHint(geoErrHint(err)); res(); }, {enableHighAccuracy:true,timeout:8000}));
     } else { flashHint(t('hint.geoUnavailable')); }
-  }catch(e){ flashHint(t('hint.locationDenied')); }
+  }catch(e){ flashHint(geoErrHint(e)); }
+  finally{ locating=false; $('locate').disabled=false; }
 };
 
 function syncTools(){
