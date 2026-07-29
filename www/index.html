@@ -1375,6 +1375,7 @@ function applyI18n(){
   const rt=document.getElementById('routes'); if(rt && rt.classList.contains('show')) renderRoutesList();   // re-translate the open routes modal
   if(lastReady) paintReady(lastReady);   // re-apply state-driven button labels/variants after re-translate
   syncLock();                            // lock toggle label/icon switch by state, not a plain data-i18n node
+  syncLoopUI();                          // same: the loop surfaces are state-driven, not static text nodes
   updateChipFade();                      // localized labels change chip widths → re-evaluate the scroll fade
 }
 function initLang(){
@@ -1914,7 +1915,7 @@ $('rate').oninput=e=>{ S.rateMs=Math.round(+e.target.value*1000); const s=(S.rat
   persist(); };
 
 $('loopSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
-  S.loop=b.dataset.loop; document.querySelectorAll('#loopSeg button').forEach(x=>x.classList.toggle('on',x===b));
+  S.loop=b.dataset.loop; syncLoopUI();
   if(S.gpsOn && isNative){ FakeGps.setLoop({loop:S.loop}).catch(()=>{}); }
   persist(); };
 
@@ -2003,6 +2004,20 @@ function syncLock(){
 }
 function toggleLock(){ S.locked = !S.locked; refreshMarkers(); syncLock(); }
 
+/* Loop mode is shown on more than one surface and is set from four places (the
+   segmented control, cold boot, loading a saved route, a locale switch) — render
+   all of it from one function so the surfaces can't drift out of sync. */
+const LOOP_MODES = ['off','restart','pingpong'];
+/* S.loop arrives from localStorage and from imported route files, and neither path
+   validates it (nz(d.loop,'off') and r.loop||'off' only guard against null). An
+   unknown id must read as 'off' here — the same fallback both engines already
+   apply (LoopMode.fromId -> HOLD; the JS enterHold else-branch). */
+function loopMode(){ return LOOP_MODES.indexOf(S.loop) >= 0 ? S.loop : 'off'; }
+function syncLoopUI(){
+  const mode = loopMode();
+  document.querySelectorAll('#loopSeg button').forEach(b=>b.classList.toggle('on', b.dataset.loop===mode));
+}
+
 /* ---------- waypoint long-press menu (dwell / per-leg speed / remove) ---------- */
 let wpMenuIdx=-1;
 function openWpMenu(i){
@@ -2075,7 +2090,7 @@ function restore(){
     $('spd').value=S.speed; $('spdVal').textContent=S.speed+' km/h';
     document.querySelectorAll('#spdPresets button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.speed));
     $('rate').value=S.rateMs/1000; $('rateVal').textContent=(S.rateMs/1000).toFixed(1)+' s'; $('liveRate').textContent=(S.rateMs/1000).toFixed(1)+'s';
-    document.querySelectorAll('#loopSeg button').forEach(b=>b.classList.toggle('on',b.dataset.loop===S.loop));
+    syncLoopUI();
     if(Array.isArray(d.waypoints)&&d.waypoints.length){
       S.waypoints=d.waypoints.map(p=>({lat:p.lat,lng:p.lng,dwell:p.dwell||'none',dwellMin:p.dwellMin||2,legSpeed:(p.legSpeed!=null)?p.legSpeed:null}));
       refreshMarkers(); recompute();
@@ -2350,7 +2365,7 @@ function loadRouteIntoScene(rt){      // restore full scene, reset to idle, rece
   $('spd').value=S.speed; $('spdVal').textContent=S.speed+' km/h';
   document.querySelectorAll('#spdPresets button').forEach(b=>b.classList.toggle('on',+b.dataset.v===S.speed));
   $('rate').value=S.rateMs/1000; $('rateVal').textContent=(S.rateMs/1000).toFixed(1)+' s'; $('liveRate').textContent=(S.rateMs/1000).toFixed(1)+'s';
-  document.querySelectorAll('#loopSeg button').forEach(b=>b.classList.toggle('on',b.dataset.loop===S.loop));
+  syncLoopUI();
   document.body.dataset.gps='off'; document.body.dataset.phase='standing';
   if(S.emitMarker){ S.emitMarker.remove(); S.emitMarker=null; }
   document.getElementById('stateLabel').textContent=statusText();
