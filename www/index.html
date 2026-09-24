@@ -38,9 +38,14 @@
   .leaflet-bar a, .leaflet-popup-content-wrapper{background:var(--panel-2); color:var(--text); border:1px solid var(--line)}
   .leaflet-popup-tip{background:var(--panel-2)}
   /* OSM / OpenFreeMap terms: the attribution must stay readable on the map screen.
-     Its .leaflet-bottom corner is lifted above the deck by syncAttributionInset(). */
+     Its .leaflet-bottom corner is lifted above the deck by syncAttributionInset().
+     Centred: the bottom-right corner is stretched full width and the control becomes a
+     centred inline-block (float/text-align only — Chrome 60 safe, no flex/inset). */
+  .leaflet-bottom.leaflet-right{left:0; right:0; text-align:center; line-height:0}
   .leaflet-control-attribution{background:rgba(13,17,23,.78)!important; color:var(--text)!important; font:500 10px/1.4 var(--sans)!important;
-    padding:2px 7px!important; border-radius:6px 0 0 0}
+    padding:2px 7px!important; border-radius:6px 6px 0 0}
+  .leaflet-bottom.leaflet-right .leaflet-control-attribution{float:none; display:inline-block; vertical-align:bottom;
+    max-width:calc(100% - 16px); white-space:normal}
   .leaflet-control-attribution a{color:var(--route)!important}
 
   /* ---------- top status strip ---------- */
