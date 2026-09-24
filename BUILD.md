@@ -133,6 +133,30 @@ declarations + the `<service>`/activity names in `AndroidManifest.xml`.
 
 ---
 
+## 5. In-app updates
+
+The app uses Google Play's **flexible** in-app update flow via
+[`@capawesome/capacitor-app-update`](https://github.com/capawesome-team/capacitor-plugins)
+(pinned 7.2.0, the last line for Capacitor 7):
+
+- On start and on resume (throttled to once per 6 h) it asks Play whether a newer
+  build exists. If a flexible update is allowed, Play shows its own consent dialog
+  and downloads in the background; the app keeps working.
+- When the download finishes an **Update ready — Restart / Later** banner appears
+  above the deck. *Restart* installs it (asking first if a playback is running and
+  stopping it). *Later* hides it until the next app start. Declining Play's dialog
+  isn't asked again in the same session.
+- Works **only for Play installs**. Sideloaded/debug APKs, devices without Play
+  services, or any error → silently skipped (`console.info` only), no UI.
+
+**Testing:** upload a build to *Internal app sharing* (or the internal testing
+track) and install it from that link on a device. Then upload a second build with
+a higher `versionCode` the same way, **but don't install it** — open the older
+app, and Play offers the update. Internal app sharing needs "Internal app sharing"
+enabled in the Play Store app (Settings → tap *Play Store version* 7× →
+Internal app sharing). It can take a few minutes, or a Play Store cache clear, for
+the update to show up.
+
 ## Project layout
 
 ```
