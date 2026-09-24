@@ -102,18 +102,22 @@ When both rows show ✓, tap the big play button.
 
 ## 4. Customisation
 
-### Map provider (single constant)
-In `www/index.html`, near the top of the script, change these to switch
-basemaps — it's a one-line edit:
+### Map provider
+In `www/index.html`, near the top of the script, these constants pick the
+basemaps (both key-less):
 
 ```js
-const MAP_TILE_URL   = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const MAP_TILE_OPTS  = { maxZoom:20, subdomains:'abcd' };
-const MAP_ATTRIBUTION = '&copy; OpenStreetMap contributors &copy; CARTO';
+const MAP_VECTOR_STYLE = 'https://tiles.openfreemap.org/styles/positron';   // primary
+const MAP_RASTER_URL   = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';    // fallback
 ```
 
-The default is the free, key-less OSM/CARTO dark basemap. After editing,
-re-run `npx cap sync android` (or rebuild) so the change reaches the app.
+The primary layer is the OpenFreeMap vector style, rendered inside Leaflet by
+MapLibre GL + `@maplibre/maplibre-gl-leaflet`, vendored (pinned) under
+`www/vendor/`. If MapLibre can't load (old WebView that can't parse the bundle,
+no WebGL) or the style fails before its first load, the app falls back to the
+OSM standard raster tiles. `console.info('[map] basemap: …')` logs which one
+was chosen. After editing, re-run `npx cap sync android` (or rebuild) so the
+change reaches the app.
 
 ### App id / name
 Rename in **two** places, then `npx cap sync`:

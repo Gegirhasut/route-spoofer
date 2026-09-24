@@ -10,6 +10,12 @@
 <title>Route Spoofer — fake GPS player</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<!-- Vector basemap engine (vendored, pinned). Separate <script> tags on purpose: on an
+     old WebView that can't parse these bundles only they fail — the inline app script
+     still runs and falls back to the OSM raster layer. -->
+<link rel="stylesheet" href="vendor/maplibre-gl-5.24.0/maplibre-gl.css" />
+<script src="vendor/maplibre-gl-5.24.0/maplibre-gl.js"></script>
+<script src="vendor/maplibre-gl-leaflet-0.1.4/leaflet-maplibre-gl.js"></script>
 <style>
   :root{
     --ink:#0D1117; --panel:#161B22; --panel-2:#1C232C;
@@ -26,7 +32,7 @@
     font-family:var(--sans); color:var(--text); background:var(--ink);
     overflow:hidden; -webkit-tap-highlight-color:transparent;
   }
-  #map{position:absolute; inset:0; background:#eae6de; z-index:0}  /* light backdrop matches Voyager while tiles load */
+  #map{position:absolute; inset:0; background:#eae6de; z-index:0}  /* light backdrop matches the light basemap while tiles load */
   .leaflet-container{background:#0a0e13}
   .leaflet-control-zoom{display:none}
   .leaflet-bar a, .leaflet-popup-content-wrapper{background:var(--panel-2); color:var(--text); border:1px solid var(--line)}
@@ -916,11 +922,14 @@ function nz(v, d){ return v == null ? d : v; }
    `isNative` selects between the two; the route/speed/loop math is identical.
    ===================================================================== */
 
-/* ---------- map provider — single swappable constant ----------
-   To use a different basemap later, change these two lines only. */
-const MAP_TILE_URL = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const MAP_TILE_OPTS = { maxZoom:20, subdomains:'abcd' };
-const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+/* ---------- map providers (keyless) ----------
+   Primary: OpenFreeMap vector style via MapLibre (vendored). Fallback: OSM standard
+   raster, used when MapLibre/WebGL is unavailable or the style fails to load. */
+const MAP_VECTOR_STYLE = 'https://tiles.openfreemap.org/styles/positron';
+const MAP_VECTOR_ATTRIBUTION = '<a href="https://openfreemap.org">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const MAP_RASTER_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const MAP_RASTER_OPTS = { maxZoom:19 };
+const MAP_RASTER_ATTRIBUTION = '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 /* ---------- Capacitor / native plugin handles ---------- */
 const Cap = window.Capacitor;
@@ -1474,7 +1483,60 @@ function openGithub(){ return openExternal(GITHUB_URL); }
 const KREMLIN = [55.7520, 37.6175];   // default startup center (Moscow Kremlin)
 const map = L.map('map', { zoomControl:false, attributionControl:true });
 map.attributionControl.setPrefix(false);          // remove the Leaflet flag prefix
-L.tileLayer(MAP_TILE_URL, Object.assign({ attribution: MAP_ATTRIBUTION }, MAP_TILE_OPTS)).addTo(map);
+
+/* ---------- basemap: vector (OpenFreeMap) with OSM raster fallback ----------
+   Exactly one basemap is on the map at a time. The vector layer is only tried when
+   the vendored bundles actually loaded and WebGL exists; any throw while creating
+   it, or a MapLibre 'error' before its first 'load' (style/tiles unreachable),
+   swaps it out for the raster layer. Installed on map-ready so the layer's onAdd
+   runs synchronously inside our try/catch. */
+let basemap = null;
+function hasWebGL(){
+  try{
+    const c = document.createElement('canvas');
+    return !!(window.WebGLRenderingContext && (c.getContext('webgl') || c.getContext('experimental-webgl')));
+  }catch(e){ return false; }
+}
+function useRasterBasemap(){
+  basemap = L.tileLayer(MAP_RASTER_URL, Object.assign({ attribution: MAP_RASTER_ATTRIBUTION }, MAP_RASTER_OPTS)).addTo(map);
+  console.info('[map] basemap: OSM raster');
+}
+function dropVectorBasemap(layer){
+  // The plugin's onRemove assumes a live GL map; give it a no-op one if the
+  // MapLibre constructor threw, so Leaflet can finish detaching the layer.
+  if(!layer._glMap) layer._glMap = { remove: function(){} };
+  try{ map.removeLayer(layer); }catch(e){ console.warn('[map] vector layer removal failed', e); }
+}
+function installBasemap(){
+  const vectorOk = typeof maplibregl !== 'undefined' && typeof L.maplibreGL === 'function' && hasWebGL();
+  if(!vectorOk){ useRasterBasemap(); return; }
+  let layer = null;
+  try{
+    layer = L.maplibreGL({
+      style: MAP_VECTOR_STYLE,
+      maxZoom: 20,
+      // Leaflet shows this string; the plugin always disables MapLibre's own control.
+      attributionControl: { customAttribution: MAP_VECTOR_ATTRIBUTION },
+    });
+    layer.addTo(map);
+    const gl = layer.getMaplibreMap();
+    let loaded = false;
+    gl.once('load', () => { loaded = true; });
+    gl.on('error', ev => {
+      if(loaded || basemap !== layer) return;
+      console.warn('[map] vector style failed, falling back to raster', ev && ev.error);
+      dropVectorBasemap(layer);
+      useRasterBasemap();
+    });
+    basemap = layer;
+    console.info('[map] basemap: OpenFreeMap vector');
+  }catch(e){
+    console.warn('[map] vector basemap unavailable, falling back to raster', e);
+    if(layer) dropVectorBasemap(layer);
+    useRasterBasemap();
+  }
+}
+map.whenReady(installBasemap);
 
 /* ---------- inset-aware centering ----------
    #map is a full-viewport overlay (Leaflet always sees the whole screen), while the
