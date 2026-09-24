@@ -37,7 +37,10 @@
   .leaflet-control-zoom{display:none}
   .leaflet-bar a, .leaflet-popup-content-wrapper{background:var(--panel-2); color:var(--text); border:1px solid var(--line)}
   .leaflet-popup-tip{background:var(--panel-2)}
-  .leaflet-control-attribution{background:rgba(13,17,23,.7)!important; color:var(--muted)!important; font:500 10px/1.4 var(--sans)!important}
+  /* OSM / OpenFreeMap terms: the attribution must stay readable on the map screen.
+     Its .leaflet-bottom corner is lifted above the deck by syncAttributionInset(). */
+  .leaflet-control-attribution{background:rgba(13,17,23,.78)!important; color:var(--text)!important; font:500 10px/1.4 var(--sans)!important;
+    padding:2px 7px!important; border-radius:6px 0 0 0}
   .leaflet-control-attribution a{color:var(--route)!important}
 
   /* ---------- top status strip ---------- */
@@ -2430,8 +2433,26 @@ function setDeckCollapsed(collapsed, save){
   document.body.classList.toggle('deck-collapsed', collapsed);
   $('deckGrab').setAttribute('aria-expanded', String(!collapsed));
   if(save!==false){ try{ localStorage.setItem(DECK_KEY, collapsed ? '1' : '0'); }catch(e){} }
-  setTimeout(()=>{ try{ map.invalidateSize(); }catch(e){} }, 300);   // give the map its reclaimed space
+  setTimeout(()=>{ try{ map.invalidateSize(); }catch(e){} syncAttributionInset(); }, 300);   // give the map its reclaimed space
 }
+/* The map fills the whole screen and the deck paints over its bottom edge, which hid
+   the (legally required) attribution. Lift Leaflet's bottom corners to sit right on
+   top of the deck. offsetHeight already includes the deck's safe-area bottom padding
+   and ignores the search-mode slide-away transform. ResizeObserver is Chrome 64+, so
+   older WebViews fall back to the toggle timer, the fold transition, the log
+   <details> toggle and window resize. */
+function syncAttributionInset(){
+  const deck=$('deck'); if(!deck) return;
+  const h=deck.offsetHeight+'px';
+  document.querySelectorAll('#map .leaflet-bottom').forEach(el=>{ el.style.bottom=h; });
+}
+if(typeof ResizeObserver==='function'){ new ResizeObserver(syncAttributionInset).observe($('deck')); }
+else {
+  $('deckBody').addEventListener('transitionend', syncAttributionInset);
+  $('deck').addEventListener('toggle', syncAttributionInset, true);   // <details> toggle doesn't bubble
+}
+window.addEventListener('resize', syncAttributionInset);
+syncAttributionInset();
 $('deckGrab').onclick = () => setDeckCollapsed(!document.body.classList.contains('deck-collapsed'));
 (function(){                       // vertical swipe on the handle toggles too
   let y0 = null; const g = $('deckGrab');
