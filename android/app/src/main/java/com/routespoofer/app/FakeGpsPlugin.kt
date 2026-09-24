@@ -1,6 +1,7 @@
 package com.routespoofer.app
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -12,6 +13,7 @@ import android.os.Build
 import android.provider.Settings
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.location.LocationCompat
 import com.getcapacitor.JSObject
 import com.getcapacitor.PermissionState
 import com.getcapacitor.Plugin
@@ -19,6 +21,9 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.getcapacitor.annotation.Permission
+import com.google.android.gms.location.CurrentLocationRequest
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import org.json.JSONArray
 
 /**
@@ -208,6 +213,53 @@ class FakeGpsPlugin : Plugin() {
             res.put("error", ERROR_UNREADABLE)
         }
         call.resolve(res)
+    }
+
+    // ----------------------------------------------------------------- real position
+
+    /**
+     * One fresh, high-accuracy fix from the fused provider for the map's locate-me
+     * button. Resolves `{ lat, lng, accuracy, isMock }`; `isMock` (Location.isMock() on
+     * API 31+, isFromMockProvider() below) lets the web layer refuse our own injected
+     * position. Rejects "permission" without location permission and "unavailable"
+     * when there is no fix or no Play services, so the web layer can fall back.
+     */
+    @SuppressLint("MissingPermission") // checked via getPermissionState just above the request
+    @PluginMethod
+    fun getRealFix(call: PluginCall) {
+        if (getPermissionState("location") != PermissionState.GRANTED) {
+            call.reject("location permission not granted", ERROR_PERMISSION)
+            return
+        }
+        val request =
+            CurrentLocationRequest
+                .Builder()
+                .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
+                .setMaxUpdateAgeMillis(0)
+                .setDurationMillis(REAL_FIX_TIMEOUT_MS)
+                .build()
+        try {
+            LocationServices
+                .getFusedLocationProviderClient(context)
+                .getCurrentLocation(request, null)
+                .addOnSuccessListener { loc ->
+                    if (loc == null) {
+                        call.reject("no fix", ERROR_UNAVAILABLE)
+                    } else {
+                        val res = JSObject()
+                        res.put("lat", loc.latitude)
+                        res.put("lng", loc.longitude)
+                        res.put("accuracy", if (loc.hasAccuracy()) loc.accuracy.toDouble() else 0.0)
+                        res.put("isMock", LocationCompat.isMock(loc))
+                        call.resolve(res)
+                    }
+                }.addOnFailureListener { e -> call.reject(e.message ?: "no fix", ERROR_UNAVAILABLE) }
+        } catch (e: SecurityException) {
+            call.reject(e.message ?: "location permission not granted", ERROR_PERMISSION)
+        } catch (e: Exception) {
+            Log.w(TAG, "getRealFix: fused provider unavailable", e)
+            call.reject(e.message ?: "no fix", ERROR_UNAVAILABLE)
+        }
     }
 
     // ----------------------------------------------------------------- readiness
@@ -482,6 +534,9 @@ class FakeGpsPlugin : Plugin() {
     companion object {
         private const val TAG = "FakeGpsPlugin"
         private const val ERROR_UNREADABLE = "unreadable"
+        private const val ERROR_PERMISSION = "permission"
+        private const val ERROR_UNAVAILABLE = "unavailable"
+        private const val REAL_FIX_TIMEOUT_MS = 15_000L
         private const val PROBE_PROVIDER = "route-spoofer-probe"
         private const val DEV_CHANNEL_ID = "route_spoofer_devopts2"
         private const val LEGACY_DEV_CHANNEL_ID = "route_spoofer_devopts"
