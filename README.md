@@ -5,7 +5,9 @@
 
 🌐 **Landing page:** <https://gegirhasut.github.io/route-spoofer/>
 
-> 🧪 **Currently in closed testing on Google Play.** A public release is coming soon. Building from source is still possible for developers (see below).
+**Available on Google Play:** [Install Route Spoofer](https://play.google.com/store/apps/details?id=com.routespoofer.app).
+
+The Android app is publicly released. Developers can also build it from source (see below).
 
 **Android mock-GPS route player for testing location-based apps — broadcasts a
 scripted, moving location to your whole device.** Any other app — maps,
@@ -80,7 +82,7 @@ Wi-Fi and mobile data while spoofing.
 
 1. Enable **Developer options**: **Settings → About phone → Build number**,
    tapped seven times.
-2. Allow installs from unknown sources and sideload the APK.
+2. [Install Route Spoofer from Google Play](https://play.google.com/store/apps/details?id=com.routespoofer.app). For a developer build, sideload your locally built APK instead.
 3. **Developer options → Select mock location app → Route Spoofer.**
 4. Launch the app, grant the **Location** permission and **Notifications**, and
    wait for the readiness card.
